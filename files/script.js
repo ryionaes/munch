@@ -20,6 +20,19 @@ let pendingCouponId = null;
 let pendingEventBtn = null;
 
 // ==========================================
+// FORCE GLOBAL ACCESS (CRITICAL FIX)
+// Inilagay sa itaas para siguradong mababasa agad ng HTML onclick events!
+// ==========================================
+window.addOrder = addOrder;
+window.deleteOrder = deleteOrder;
+window.openCheckout = openCheckout;
+window.claimCoupon = claimCoupon;
+window.closeCheckout = closeCheckout;
+window.placeOrder = placeOrder;
+window.applyCoupon = applyCoupon;
+window.confirmClaim = confirmClaim;
+
+// ==========================================
 // TOAST NOTIFICATIONS LOGIC
 // ==========================================
 function showToast(message, type = 'success') {
@@ -49,6 +62,9 @@ function showToast(message, type = 'success') {
 function addOrder(foodName, category, price, quantity, deliveryTime, rating) {
     // PREVENT GHOST/NULL ORDERS: If foodName is empty or 'null', stop right here.
     if (!foodName || foodName === 'null') return;
+
+    // Safety check in case localStorage was corrupted
+    if (!Array.isArray(orders)) orders = [];
 
     const existingOrder = orders.find(order => order.foodName === foodName);
 
@@ -387,151 +403,143 @@ function placeOrder() {
 // DOM EVENT BINDINGS
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-
-    // Reveal Logic
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.classList.add('active');
-            }
-        });
-    }, { threshold: 0.15 });
-    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-    // Restore Claim Buttons visually based on wallet status
-    document.querySelectorAll('.claim-btn').forEach(btn => {
-        const id = btn.getAttribute('data-id');
-        const code = btn.getAttribute('data-code');
-        const key = id || code;
-        if (key && claimedCoupons[key]) {
-            btn.innerHTML = '<i data-lucide="check" style="width: 18px; display: inline-block; vertical-align: middle; margin-right: 5px;"></i> Claimed';
-            btn.style.background = '#27AE60';
-            btn.style.color = 'white';
-            btn.style.border = 'none';
-            btn.disabled = true;
+    try {
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
         }
-    });
 
-    // Category Filter Buttons
-    const filterBtns = document.querySelectorAll('.filter-btn');
-    const foodCards = document.querySelectorAll('.food-card');
-    filterBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            filterBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            const filterValue = btn.getAttribute('data-filter');
-            foodCards.forEach(card => {
-                // Get the category string, or default to an empty string if missing
-                const itemCategories = card.getAttribute('data-category') || "";
-                
-                // Use .includes() instead of ===
-                card.style.display = (filterValue === 'all' || itemCategories.includes(filterValue)) ? 'block' : 'none';
-            });
-        });
-    });
-    // FAQ Accordion
-    document.querySelectorAll('.faq-header').forEach(header => {
-        header.addEventListener('click', function() {
-            const item = this.parentElement;
-            const isActive = item.classList.contains('active');
-            document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
-            if (!isActive) item.classList.add('active');
-        });
-    });
-
-    // Bind Core Elements (only if they don't have inline onclicks)
-    const bindings = [
-        { id: 'prev-slide-btn', event: 'click', handler: () => moveSlide(-1) },
-        { id: 'next-slide-btn', event: 'click', handler: () => moveSlide(1) },
-        { id: 'orderNowBtn', event: 'click', handler: () => window.location.href = 'order.html' },
-        { id: 'confirmClaimCouponBtn', event: 'click', handler: confirmClaim },
-        { id: 'cancelClaimCouponBtn', event: 'click', handler: closeModal },
-        { id: 'copyCodeBtn', event: 'click', handler: copyPromoCode },
-        { id: 'confirmPromoBtn', event: 'click', handler: confirmClaim },
-        { id: 'closePromoBtn', event: 'click', handler: closeModal }
-    ];
-
-    bindings.forEach(binding => {
-        const el = document.getElementById(binding.id);
-        if (el && !el.hasAttribute('onclick')) {
-            el.addEventListener(binding.event, binding.handler);
-        }
-    });
-
-    // Attach functionality to dynamic Claim Coupon Buttons (for index/promos page)
-    document.querySelectorAll('.claim-btn').forEach(btn => {
-        if (!btn.hasAttribute('onclick')) {
-            btn.addEventListener('click', (e) => {
-                const id = btn.getAttribute('data-id');
-                const code = btn.getAttribute('data-code');
-                const title = btn.getAttribute('data-title');
-                if (id) {
-                    claimCoupon(id, e.currentTarget);
-                } else if (code && title) {
-                    const codeEl = document.getElementById('promoCodeDisplay');
-                    const titleEl = document.getElementById('modalTitle');
-                    if (codeEl) codeEl.innerText = code;
-                    if (titleEl) titleEl.innerText = title;
-                    const modal = document.getElementById('claimModal');
-                    if (modal) modal.style.display = 'flex';
+        // Reveal Logic
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
                 }
             });
-        }
-    });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-    // Fix for the double-fire issue: only attach this if the button DOES NOT have onclick
-    document.querySelectorAll('.btn-add-card').forEach(btn => {
-        if (btn.hasAttribute('data-food')) {
-            btn.addEventListener('click', () => {
-                addOrder(
-                    btn.getAttribute('data-food'),
-                    btn.getAttribute('data-cat'),
-                    btn.getAttribute('data-price'),
-                    btn.getAttribute('data-qty'),
-                    btn.getAttribute('data-time'),
-                    btn.getAttribute('data-rating')
-                );
-            });
-        }
-    });
-
-    // Developer Image Fallback logic
-    document.querySelectorAll('.dev-img').forEach(img => {
-        img.addEventListener('error', function() {
-            this.classList.add('hidden');
-            const fallback = this.nextElementSibling;
-            if (fallback) fallback.classList.remove('hidden');
+        // Restore Claim Buttons visually based on wallet status
+        document.querySelectorAll('.claim-btn').forEach(btn => {
+            const id = btn.getAttribute('data-id');
+            const code = btn.getAttribute('data-code');
+            const key = id || code;
+            if (key && claimedCoupons[key]) {
+                btn.innerHTML = '<i data-lucide="check" style="width: 18px; display: inline-block; vertical-align: middle; margin-right: 5px;"></i> Claimed';
+                btn.style.background = '#27AE60';
+                btn.style.color = 'white';
+                btn.style.border = 'none';
+                btn.disabled = true;
+            }
         });
-    });
 
-    // Outside click to close modals
-    window.addEventListener('click', function(event) {
-        if (event.target.classList.contains('modal-overlay')) {
-            closeModal();
+        // Category Filter Buttons
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        const foodCards = document.querySelectorAll('.food-card');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const filterValue = btn.getAttribute('data-filter');
+                foodCards.forEach(card => {
+                    const itemCategories = card.getAttribute('data-category') || "";
+                    card.style.display = (filterValue === 'all' || itemCategories.includes(filterValue)) ? 'block' : 'none';
+                });
+            });
+        });
+
+        // FAQ Accordion
+        document.querySelectorAll('.faq-header').forEach(header => {
+            header.addEventListener('click', function() {
+                const item = this.parentElement;
+                const isActive = item.classList.contains('active');
+                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('active'));
+                if (!isActive) item.classList.add('active');
+            });
+        });
+
+        // Bind Core Elements
+        const bindings = [
+            { id: 'prev-slide-btn', event: 'click', handler: () => moveSlide(-1) },
+            { id: 'next-slide-btn', event: 'click', handler: () => moveSlide(1) },
+            { id: 'orderNowBtn', event: 'click', handler: () => window.location.href = 'order.html' },
+            { id: 'confirmClaimCouponBtn', event: 'click', handler: confirmClaim },
+            { id: 'cancelClaimCouponBtn', event: 'click', handler: closeModal },
+            { id: 'copyCodeBtn', event: 'click', handler: copyPromoCode },
+            { id: 'confirmPromoBtn', event: 'click', handler: confirmClaim },
+            { id: 'closePromoBtn', event: 'click', handler: closeModal }
+        ];
+
+        bindings.forEach(binding => {
+            const el = document.getElementById(binding.id);
+            if (el && !el.hasAttribute('onclick')) {
+                el.addEventListener(binding.event, binding.handler);
+            }
+        });
+
+        // Attach functionality to dynamic Claim Coupon Buttons
+        document.querySelectorAll('.claim-btn').forEach(btn => {
+            if (!btn.hasAttribute('onclick')) {
+                btn.addEventListener('click', (e) => {
+                    const id = btn.getAttribute('data-id');
+                    const code = btn.getAttribute('data-code');
+                    const title = btn.getAttribute('data-title');
+                    if (id) {
+                        claimCoupon(id, e.currentTarget);
+                    } else if (code && title) {
+                        const codeEl = document.getElementById('promoCodeDisplay');
+                        const titleEl = document.getElementById('modalTitle');
+                        if (codeEl) codeEl.innerText = code;
+                        if (titleEl) titleEl.innerText = title;
+                        const modal = document.getElementById('claimModal');
+                        if (modal) modal.style.display = 'flex';
+                    }
+                });
+            }
+        });
+
+        // Fix for the double-fire issue
+        document.querySelectorAll('.btn-add-card').forEach(btn => {
+            if (btn.hasAttribute('data-food')) {
+                btn.addEventListener('click', () => {
+                    addOrder(
+                        btn.getAttribute('data-food'),
+                        btn.getAttribute('data-cat'),
+                        btn.getAttribute('data-price'),
+                        btn.getAttribute('data-qty'),
+                        btn.getAttribute('data-time'),
+                        btn.getAttribute('data-rating')
+                    );
+                });
+            }
+        });
+
+        // Developer Image Fallback logic
+        document.querySelectorAll('.dev-img').forEach(img => {
+            img.addEventListener('error', function() {
+                this.classList.add('hidden');
+                const fallback = this.nextElementSibling;
+                if (fallback) fallback.classList.remove('hidden');
+            });
+        });
+
+        // Outside click to close modals
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                closeModal();
+            }
+        });
+
+        // Initialize UI states
+        renderCouponDropdown();
+        renderTable();
+        updateStats();
+        
+        const countEl = document.getElementById('claimedCount');
+        if (countEl) {
+            const count = Object.values(claimedCoupons).filter(Boolean).length;
+            countEl.innerText = `${count} Voucher${count > 1 ? 's' : ''} Claimed`;
         }
-    });
-
-    // Initialize UI states
-    renderCouponDropdown();
-    renderTable();
-    updateStats();
-    
-    const countEl = document.getElementById('claimedCount');
-    if (countEl) {
-        const count = Object.values(claimedCoupons).filter(Boolean).length;
-        countEl.innerText = `${count} Voucher${count > 1 ? 's' : ''} Claimed`;
+    } catch (err) {
+        console.warn("Munch UI Init warning: Some elements might not exist on this page.", err);
     }
 });
-
-// ==========================================
-// FORCE GLOBAL ACCESS (CRITICAL FIX)
-// ==========================================
-window.addOrder = addOrder;
-window.deleteOrder = deleteOrder;
-window.openCheckout = openCheckout;
-window.claimCoupon = claimCoupon;
-window.closeCheckout = closeModal;
-window.placeOrder = placeOrder;
