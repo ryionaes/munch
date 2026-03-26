@@ -20,8 +20,58 @@ let pendingCouponId = null;
 let pendingEventBtn = null;
 
 // ==========================================
+// CURRENCY LOGIC (ADDED HERE AT THE TOP)
+// ==========================================
+const CURRENCY_DATA = {
+    USD: { symbol: '$', rate: 1 },
+    PHP: { symbol: '₱', rate: 56 },
+    EUR: { symbol: '€', rate: 0.92 },
+    GBP: { symbol: '£', rate: 0.79 }
+};
+
+let currentCurrency = localStorage.getItem('foodhub_currency') || 'USD';
+
+function formatPrice(usdValue) {
+    const currency = CURRENCY_DATA[currentCurrency];
+    return currency.symbol + (usdValue * currency.rate).toFixed(2);
+}
+
+function changeCurrency(newCurrency) {
+    currentCurrency = newCurrency;
+    localStorage.setItem('foodhub_currency', newCurrency);
+    updateAllVisiblePrices();
+}
+
+function updateAllVisiblePrices() {
+    // 1. Update Food Grid Prices
+    document.querySelectorAll('.food-card').forEach(card => {
+        const btn = card.querySelector('.btn-add-card');
+        const priceStrong = card.querySelector('.card-bottom strong');
+        if (btn && priceStrong) {
+            const onclickStr = btn.getAttribute('onclick');
+            const match = onclickStr.match(/addOrder\([^,]+,\s*'[^']+',\s*([\d.]+)/);
+            if (match && match[1]) {
+                const usdPrice = parseFloat(match[1]);
+                priceStrong.textContent = formatPrice(usdPrice);
+            }
+        }
+    });
+
+    // 2. Sync Dropdowns across pages
+    document.querySelectorAll('#currencySelect').forEach(select => {
+        select.value = currentCurrency;
+    });
+
+    // 3. Re-render Cart and Modal
+    renderTable();
+    updateStats();
+    if (document.getElementById('checkoutModal') && document.getElementById('checkoutModal').style.display === 'flex') {
+        renderCheckoutTotals();
+    }
+}
+
+// ==========================================
 // FORCE GLOBAL ACCESS (CRITICAL FIX)
-// Inilagay sa itaas para siguradong mababasa agad ng HTML onclick events!
 // ==========================================
 window.addOrder = addOrder;
 window.deleteOrder = deleteOrder;
@@ -31,6 +81,8 @@ window.closeCheckout = closeCheckout;
 window.placeOrder = placeOrder;
 window.applyCoupon = applyCoupon;
 window.confirmClaim = confirmClaim;
+window.changeCurrency = changeCurrency;
+window.renderTable = renderTable;
 
 // ==========================================
 // TOAST NOTIFICATIONS LOGIC
@@ -63,7 +115,6 @@ function addOrder(foodName, category, price, quantity, deliveryTime, rating) {
     if (!foodName || foodName === 'null') return;
     if (!Array.isArray(orders)) orders = [];
 
-    // AUTO-FETCH IMAGE: Hahanapin niya yung image sa HTML card based sa food name
     let imageSrc = '';
     document.querySelectorAll('.food-card').forEach(card => {
         const titleElement = card.querySelector('h4');
@@ -78,7 +129,7 @@ function addOrder(foodName, category, price, quantity, deliveryTime, rating) {
     if (existingOrder) {
         existingOrder.quantity += parseInt(quantity);
         existingOrder.subtotal = existingOrder.price * existingOrder.quantity;
-        if (imageSrc) existingOrder.imageSrc = imageSrc; // Update image just in case
+        if (imageSrc) existingOrder.imageSrc = imageSrc; 
     } else {
         const order = {
             id: Date.now(),
@@ -89,7 +140,7 @@ function addOrder(foodName, category, price, quantity, deliveryTime, rating) {
             subtotal: parseFloat(price) * parseInt(quantity),
             deliveryTime: parseInt(deliveryTime),
             rating: parseFloat(rating),
-            imageSrc: imageSrc // I-save natin ang image link dito
+            imageSrc: imageSrc 
         };
         orders.push(order);
     }
@@ -127,8 +178,8 @@ function updateStats() {
 
     if (totalCostDisplay) {
         totalCostDisplay.innerHTML = activeDiscount > 0
-            ? `<span class="discount-strikethrough" style="text-decoration: line-through; color: #999; margin-right: 10px; font-size: 14px;">$${subtotal.toFixed(2)}</span> $${finalTotal.toFixed(2)}`
-            : `$${finalTotal.toFixed(2)}`;
+            ? `<span class="discount-strikethrough" style="text-decoration: line-through; color: #999; margin-right: 10px; font-size: 14px;">${formatPrice(subtotal)}</span> ${formatPrice(finalTotal)}`
+            : `${formatPrice(finalTotal)}`;
     }
 }
 
@@ -138,7 +189,6 @@ function updateStats() {
 function claimCoupon(couponId, targetBtnOrEvent) {
     pendingCouponId = couponId;
     
-    // Handle both event objects (from inline onclick) and DOM elements safely
     if (targetBtnOrEvent && targetBtnOrEvent.currentTarget) {
         pendingEventBtn = targetBtnOrEvent.currentTarget;
     } else if (targetBtnOrEvent && targetBtnOrEvent.target) {
@@ -157,7 +207,6 @@ function claimCoupon(couponId, targetBtnOrEvent) {
 
 function confirmClaim() {
     if (pendingCouponId) {
-        // Index page flow: coupon claimed via claimCoupon()
         claimedCoupons[pendingCouponId] = true;
         localStorage.setItem('foodhub_wallet', JSON.stringify(claimedCoupons));
 
@@ -174,7 +223,6 @@ function confirmClaim() {
         closeModal();
         showToast('Coupon added to your wallet!', 'success');
     } else {
-        // Promos page flow: voucher claimed via claimModal
         const codeEl = document.getElementById('promoCodeDisplay');
         if (codeEl) {
             const code = codeEl.innerText;
@@ -203,7 +251,6 @@ function closeModal() {
     pendingEventBtn = null;
 }
 
-// Global Alias for inline onclicks in HTML
 function closeCheckout() {
     closeModal();
 }
@@ -213,14 +260,14 @@ function renderCouponDropdown() {
     const container = document.getElementById('couponContainer');
     if (!select || !container) return;
 
-    select.innerHTML = '<option value="">No coupon applied</option>';
+    select.innerHTML = '<option value="0">No coupon applied</option>';
     let hasCoupons = false;
 
     for (let id in claimedCoupons) {
         if (claimedCoupons[id] && COUPON_DATA[id]) {
             hasCoupons = true;
             const option = document.createElement('option');
-            option.value = id; // Store coupon ID, not value
+            option.value = id; 
             option.textContent = COUPON_DATA[id].name;
             if (id === activeCouponId) option.selected = true;
             select.appendChild(option);
@@ -230,29 +277,65 @@ function renderCouponDropdown() {
 }
 
 function applyCoupon(couponId) {
-    if (!couponId || !COUPON_DATA[couponId]) {
+    if (!couponId || couponId === "0" || !COUPON_DATA[couponId]) {
         activeDiscount = 0;
         activeDiscountType = 'percent';
         activeCouponId = '';
-        localStorage.setItem('foodhub_active_discount', 0);
-        localStorage.setItem('foodhub_active_discount_type', 'percent');
-        localStorage.setItem('foodhub_active_coupon_id', '');
-        updateStats();
-        return;
+    } else {
+        const coupon = COUPON_DATA[couponId];
+        activeDiscount = coupon.value;
+        activeDiscountType = coupon.type || 'percent';
+        activeCouponId = couponId;
+        showToast(`${coupon.name} applied!`, 'info');
     }
 
-    const coupon = COUPON_DATA[couponId];
-    activeDiscount = coupon.value;
-    activeDiscountType = coupon.type || 'percent';
-    activeCouponId = couponId;
     localStorage.setItem('foodhub_active_discount', activeDiscount);
     localStorage.setItem('foodhub_active_discount_type', activeDiscountType);
     localStorage.setItem('foodhub_active_coupon_id', activeCouponId);
+    
     updateStats();
-
-    if (activeDiscount > 0) {
-        showToast(`${coupon.name} applied!`, 'info');
+    
+    const modal = document.getElementById('checkoutModal');
+    if (modal && modal.style.display === 'flex') {
+        renderCheckoutTotals();
     }
+}
+
+function renderCheckoutTotals() {
+    const tableBody = document.getElementById('checkoutTableBody');
+    if (!tableBody) return;
+
+    tableBody.innerHTML = '';
+    let subtotal = 0;
+
+    orders.forEach(item => {
+        subtotal += item.subtotal;
+        const row = document.createElement('tr');
+        row.style.borderBottom = "1px solid #f9f9f9";
+        row.innerHTML = `
+            <td style="padding: 10px 0; font-size: 13px; font-weight: 600; color: #2C3E50;">${item.foodName} <span style="color: #95A5A6; font-weight: 400;">(x${item.quantity})</span></td>
+            <td style="padding: 10px 0; font-size: 13px; font-weight: 600; text-align: right; color: #FF6B35;">${formatPrice(item.subtotal)}</td>
+        `;
+        tableBody.appendChild(row);
+    });
+
+    const deliveryFee = 2.00; 
+    const discountAmount = activeDiscountType === 'flat'
+        ? Math.min(activeDiscount, subtotal)
+        : subtotal * (activeDiscount / 100);
+    const finalTotal = (subtotal - discountAmount) + deliveryFee;
+
+    document.getElementById('summarySubtotal').textContent = formatPrice(subtotal);
+
+    const discountRow = document.getElementById('summaryDiscountRow');
+    if (activeDiscount > 0) {
+        discountRow.style.display = 'flex';
+        document.getElementById('summaryDiscountAmount').textContent = `-${formatPrice(discountAmount)}`;
+    } else {
+        discountRow.style.display = 'none';
+    }
+    
+    document.getElementById('summaryTotal').textContent = formatPrice(finalTotal);
 }
 
 function copyPromoCode() {
@@ -277,7 +360,6 @@ function renderTable() {
     const emptyMessage = document.getElementById('emptyMessage');
     if (!tableBody) return;
 
-    // Linisin muna ang mga luma para hindi mag-duplicate
     const items = tableBody.querySelectorAll('.order-item');
     items.forEach(item => item.remove());
 
@@ -292,7 +374,6 @@ function renderTable() {
         const itemDiv = document.createElement('div');
         itemDiv.className = 'order-item';
         
-        // Check kung may image na na-save, kung wala, fallback sa utensils icon
         const imgHTML = order.imageSrc 
             ? `<img src="${order.imageSrc}" alt="${order.foodName}" style="width: 100%; height: 100%; object-fit: cover;">`
             : `<i data-lucide="utensils"></i>`;
@@ -304,7 +385,7 @@ function renderTable() {
             <div class="item-details">
                 <h4>${order.foodName}</h4>
                 <p>Qty: ${order.quantity}</p>
-                <strong>$${order.subtotal.toFixed(2)}</strong>
+                <strong>${formatPrice(order.subtotal)}</strong> 
             </div>
             <button class="btn-delete" onclick="deleteOrder(${order.id})">
                 <i data-lucide="trash-2"></i>
@@ -338,40 +419,8 @@ function openCheckout() {
     }
 
     const modal = document.getElementById('checkoutModal');
-    const tableBody = document.getElementById('checkoutTableBody');
-    if (!modal || !tableBody) return;
-
-    tableBody.innerHTML = '';
-    let subtotal = 0;
-
-    orders.forEach(item => {
-        subtotal += item.subtotal;
-        const row = document.createElement('tr');
-        row.style.borderBottom = "1px solid #f9f9f9";
-        row.innerHTML = `
-            <td style="padding: 10px 0; font-size: 13px; font-weight: 600; color: #2C3E50;">${item.foodName} <span style="color: #95A5A6; font-weight: 400;">(x${item.quantity})</span></td>
-            <td style="padding: 10px 0; font-size: 13px; font-weight: 600; text-align: right; color: #FF6B35;">$${item.subtotal.toFixed(2)}</td>
-        `;
-        tableBody.appendChild(row);
-    });
-
-    const deliveryFee = 2.00;
-    const discountAmount = activeDiscountType === 'flat'
-        ? Math.min(activeDiscount, subtotal)
-        : subtotal * (activeDiscount / 100);
-    const finalTotal = (subtotal - discountAmount) + deliveryFee;
-
-    document.getElementById('summarySubtotal').textContent = `$${subtotal.toFixed(2)}`;
-
-    const discountRow = document.getElementById('summaryDiscountRow');
-    if (activeDiscount > 0) {
-        discountRow.style.display = 'flex';
-        document.getElementById('summaryDiscountAmount').textContent = `-$${discountAmount.toFixed(2)}`;
-    } else {
-        discountRow.style.display = 'none';
-    }
-
-    document.getElementById('summaryTotal').textContent = `$${finalTotal.toFixed(2)}`;
+    renderCouponDropdown(); 
+    renderCheckoutTotals(); 
     modal.style.display = 'flex';
 }
 
@@ -423,7 +472,6 @@ document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
         }
 
-        // Reveal Logic
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -433,7 +481,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { threshold: 0.15 });
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-        // Restore Claim Buttons visually based on wallet status
         document.querySelectorAll('.claim-btn').forEach(btn => {
             const id = btn.getAttribute('data-id');
             const code = btn.getAttribute('data-code');
@@ -447,7 +494,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Category Filter Buttons
         const filterBtns = document.querySelectorAll('.filter-btn');
         const foodCards = document.querySelectorAll('.food-card');
         filterBtns.forEach(btn => {
@@ -462,7 +508,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // FAQ Accordion
         document.querySelectorAll('.faq-header').forEach(header => {
             header.addEventListener('click', function() {
                 const item = this.parentElement;
@@ -472,7 +517,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Bind Core Elements
         const bindings = [
             { id: 'prev-slide-btn', event: 'click', handler: () => moveSlide(-1) },
             { id: 'next-slide-btn', event: 'click', handler: () => moveSlide(1) },
@@ -491,7 +535,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Attach functionality to dynamic Claim Coupon Buttons
         document.querySelectorAll('.claim-btn').forEach(btn => {
             if (!btn.hasAttribute('onclick')) {
                 btn.addEventListener('click', (e) => {
@@ -512,9 +555,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-       
-
-        // Developer Image Fallback logic
         document.querySelectorAll('.dev-img').forEach(img => {
             img.addEventListener('error', function() {
                 this.classList.add('hidden');
@@ -523,17 +563,16 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Outside click to close modals
         window.addEventListener('click', function(event) {
             if (event.target.classList.contains('modal-overlay')) {
                 closeModal();
             }
         });
 
-        // Initialize UI states
         renderCouponDropdown();
         renderTable();
         updateStats();
+        updateAllVisiblePrices(); // DITO NATIN C-NALL YUNG INITIAL CURRENCY LOAD
         
         const countEl = document.getElementById('claimedCount');
         if (countEl) {
@@ -544,8 +583,3 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn("Munch UI Init warning: Some elements might not exist on this page.", err);
     }
 });
-
-// Siguraduhin na ito ang nasa pinakataas ng script.js pagkatapos ng variables
-window.addOrder = addOrder;
-window.deleteOrder = deleteOrder;
-window.renderTable = renderTable; // Idagdag mo ito

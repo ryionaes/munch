@@ -642,3 +642,73 @@ select:focus { border-color: var(--primary-orange); }
     .nav-links { display: none; }
     .wallet-summary { flex-direction: column; gap: 15px; text-align: center; }
 }
+/* ==========================================
+   CURRENCY SWITCHER
+   ========================================== */
+.currency-switcher select {
+    appearance: none;
+    background: var(--light-orange) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23FF6B35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 12px center;
+    padding: 8px 36px 8px 16px;
+    border-radius: 12px;
+    border: 1px solid transparent;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary-orange);
+    outline: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(255, 107, 53, 0.1);
+}
+
+.currency-switcher select:hover, 
+.currency-switcher select:focus {
+    background-color: var(--primary-orange);
+    color: white;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>');
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 107, 53, 0.2);
+}
+
+/* ==========================================
+   CHECKOUT CONFIRM BUTTON
+   ========================================== */
+/* ==========================================
+   CHECKOUT CONFIRM BUTTON (FIXED)
+   ========================================== */
+.btn-checkout-confirm {
+    background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange)) !important;
+    color: white !important;
+    padding: 18px 24px !important;
+    border-radius: 16px !important;
+    border: none !important;
+    font-weight: 800 !important;
+    font-size: 16px !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    margin-top: 25px !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    box-shadow: 0 10px 25px rgba(255, 107, 53, 0.4) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 10px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+}
+
+.btn-checkout-confirm:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 15px 35px rgba(255, 107, 53, 0.6) !important;
+    background: linear-gradient(135deg, #ff8559, var(--dark-orange)) !important;
+}
+
+.btn-checkout-confirm:active {
+    transform: translateY(2px) !important;
+    box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3) !important;
+}
+
+.btn-checkout-confirm i {
+    width: 22px !important;
+    height: 22px !important;
+}

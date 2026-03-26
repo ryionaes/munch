@@ -334,11 +334,19 @@
         <a href="promos.html">Promos</a>
         <a href="about.html">About</a>
     </div>
-    <div class="user-profile">
-        <a href="developers.html" class="dev-info-icon" title="About Developers">
-            <i data-lucide="info" class="icon-20"></i>
-        </a>
+   <div class="user-profile" style="display: flex; align-items: center; gap: 15px;">
+    <div class="currency-switcher">
+        <select id="currencySelect" onchange="changeCurrency(this.value)">
+            <option value="USD">🇺🇸 USD</option>
+            <option value="PHP">🇵🇭 PHP</option>
+            <option value="EUR">🇪🇺 EUR</option>
+            <option value="GBP">🇬🇧 GBP</option>
+        </select>
     </div>
+    <a href="developers.html" class="dev-info-icon" title="About Developers">
+        <i data-lucide="info" class="icon-20"></i>
+    </a>
+</div>
 </nav>
 
 <div class="dashboard-layout">
@@ -1033,12 +1041,7 @@
                 <span id="totalOrders">0</span>
             </div>
             
-            <div id="couponContainer" style="display: none; margin-bottom: 15px;">
-                <label style="font-size: 13px; font-weight: 600; color: var(--text-light);">Voucher Applied:</label>
-                <select id="couponSelect" onchange="applyCoupon(this.value)">
-                    <option value="0">No coupon applied</option>
-                </select>
-            </div>
+            
             
             <div class="summary-total">
                 <span>Total</span>
@@ -1054,9 +1057,8 @@
 
 <!-- CHECKOUT MODAL -->
 <div id="checkoutModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content" style="text-align: left; max-width: 520px; padding: 0; overflow: hidden;">
+    <div class="modal-content" style="text-align: left; max-width: 520px; padding: 0; overflow-y: auto; overflow-x: hidden;">
         
-        <!-- Modal Header -->
         <div style="background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange)); padding: 28px 32px; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <div style="width: 42px; height: 42px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
@@ -1072,28 +1074,31 @@
             </button>
         </div>
 
-        <!-- Modal Body -->
         <div style="padding: 28px 32px;">
 
-            <!-- Delivery Details -->
             <p style="font-size: 12px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px;">Delivery Details</p>
             <input type="text" id="custName" class="checkout-input" placeholder="Your Full Name">
             <input type="text" id="custAddress" class="checkout-input" placeholder="Complete Delivery Address">
             <input type="text" id="custPhone" class="checkout-input" placeholder="Phone Number (e.g. 09123456789)" style="margin-bottom: 0;">
 
-            <!-- Divider -->
             <div style="border-top: 2px dashed #EEE; margin: 22px 0;"></div>
 
-            <!-- Order Items -->
             <p style="font-size: 12px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 14px;">Order Summary</p>
             <table style="width: 100%; border-collapse: collapse; margin-bottom: 4px;">
                 <tbody id="checkoutTableBody"></tbody>
             </table>
 
-            <!-- Divider -->
             <div style="border-top: 2px dashed #EEE; margin: 16px 0;"></div>
 
-            <!-- Totals -->
+            <div id="couponContainer" style="display: none; margin-bottom: 16px; background: var(--bg-gray); padding: 12px 16px; border-radius: 12px; border: 1px dashed #CCC;">
+                <label style="font-size: 13px; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 6px;">
+                    <i data-lucide="ticket" style="width: 16px; color: var(--primary-orange);"></i> Apply a Voucher
+                </label>
+                <select id="couponSelect" onchange="applyCoupon(this.value)" style="background-color: white; margin-top: 10px;">
+                    <option value="0">No coupon applied</option>
+                </select>
+            </div>
+
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; font-weight: 500; font-size: 14px;">
                     <span style="color: var(--text-light);">Subtotal</span>
@@ -1105,7 +1110,7 @@
                 </div>
                 <div style="display: flex; justify-content: space-between; font-weight: 500; font-size: 14px;">
                     <span style="color: var(--text-light);">Delivery Fee</span>
-                    <span>$2.00</span>
+                    <span>$2.00</span> 
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 20px; font-weight: 800; padding-top: 12px; border-top: 2px solid var(--light-orange);">
                     <span>Total</span>
@@ -1113,9 +1118,9 @@
                 </div>
             </div>
 
-            <button class="btn-confirm-claim" onclick="placeOrder()" style="margin-top: 22px; padding: 16px; font-size: 16px; border-radius: 14px;">
-                <i data-lucide="check-circle" style="width: 18px; display: inline-block; vertical-align: middle; margin-right: 6px;"></i> Confirm Order
-            </button>
+            <button class="btn-checkout-confirm" onclick="placeOrder()">
+    <i data-lucide="check-circle"></i> Confirm Order
+</button>
         </div>
     </div>
 </div>

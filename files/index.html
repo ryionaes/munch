@@ -23,11 +23,19 @@
             <a href="promos.html">Promos</a>
             <a href="about.html">About</a>
         </div>
-        <div class="user-profile">
-            <a href="developers.html" class="dev-info-icon" title="About Developers">
-                <i data-lucide="info" class="icon-20"></i>
-            </a>
-        </div>
+        <div class="user-profile" style="display: flex; align-items: center; gap: 15px;">
+    <div class="currency-switcher">
+        <select id="currencySelect" onchange="changeCurrency(this.value)">
+            <option value="USD">🇺🇸 USD</option>
+            <option value="PHP">🇵🇭 PHP</option>
+            <option value="EUR">🇪🇺 EUR</option>
+            <option value="GBP">🇬🇧 GBP</option>
+        </select>
+    </div>
+    <a href="developers.html" class="dev-info-icon" title="About Developers">
+        <i data-lucide="info" class="icon-20"></i>
+    </a>
+</div>
     </nav>
 
     <div class="dashboard-layout">
