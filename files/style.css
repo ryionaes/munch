@@ -341,7 +341,7 @@ body {
     position: absolute; top: -15px; right: 10px; font-size: 120px; font-weight: 800;
     color: var(--bg-gray); opacity: 0.8; z-index: 0; line-height: 1; transition: all 0.3s ease;
 }
-.step-card:hover .step-number { color: var(--light-orange); transform: scale(1.1) rotate(5deg); }
+.step-card:hover .step-number { color: #f1602e; transform: scale(1.1) rotate(5deg); }
 
 .step-icon, .contact-icon {
     width: 80px; height: 80px; background: var(--light-orange); color: var(--primary-orange);
