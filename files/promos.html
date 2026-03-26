@@ -23,13 +23,33 @@
             <a href="about.html">About</a>
         </div>
         <div class="user-profile" style="display: flex; align-items: center; gap: 15px;">
-    <div class="currency-switcher">
-        <select id="currencySelect" onchange="changeCurrency(this.value)">
-            <option value="USD">🇺🇸 USD</option>
-            <option value="PHP">🇵🇭 PHP</option>
-            <option value="EUR">🇪🇺 EUR</option>
-            <option value="GBP">🇬🇧 GBP</option>
-        </select>
+    <div class="custom-currency-dropdown">
+        <div class="dropdown-selected" onclick="toggleDropdown()">
+            <img src="https://flagcdn.com/w20/ph.png" alt="PHP" id="selectedFlag">
+            <span id="selectedCurrency">PHP</span>
+            <i data-lucide="chevron-down" style="width: 16px; margin-left: auto; color: var(--primary-orange);"></i>
+        </div>
+        
+        <div class="dropdown-options" id="currencyOptions">
+            <div class="dropdown-item" onclick="selectCurrency('PHP', 'ph.png')">
+                <img src="https://flagcdn.com/w20/ph.png" alt="PH"> PHP
+            </div>
+             <div class="dropdown-item" onclick="selectCurrency('USD', 'us.png')">
+                <img src="https://flagcdn.com/w20/us.png" alt="US"> USD
+            </div>
+            <div class="dropdown-item" onclick="selectCurrency('EUR', 'eu.png')">
+                <img src="https://flagcdn.com/w20/eu.png" alt="EU"> EUR
+            </div>
+            <div class="dropdown-item" onclick="selectCurrency('GBP', 'gb.png')">
+                <img src="https://flagcdn.com/w20/gb.png" alt="GB"> GBP
+            </div>
+            <div class="dropdown-item" onclick="selectCurrency('JPY', 'jp.png')">
+                <img src="https://flagcdn.com/w20/jp.png" alt="JP"> JPY
+            </div>
+            <div class="dropdown-item" onclick="selectCurrency('KRW', 'kr.png')">
+                <img src="https://flagcdn.com/w20/kr.png" alt="KR"> KRW
+            </div>
+        </div>
     </div>
     <a href="developers.html" class="dev-info-icon" title="About Developers">
         <i data-lucide="info" class="icon-20"></i>
@@ -47,12 +67,13 @@
             <p style="color: var(--text-light); font-size: 17px; max-width: 520px; margin: 0 auto; line-height: 1.6;">Claim your perks and save more on every order. Pick a voucher, add it to your wallet, and apply it at checkout.</p>
         </div>
 
-        <div class="wallet-summary">
+        <div class="wallet-summary" onclick="openWalletModal()" title="View my vouchers">
             <div class="wallet-info">
                 <div class="wallet-icon"><i data-lucide="wallet" class="icon-24"></i></div>
                 <div class="wallet-text">
                     <h4>My Wallet</h4>
                     <p id="claimedCount">0 Vouchers Claimed</p>
+                    <span class="wallet-summary-hint">Tap to view →</span>
                 </div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px; color: var(--text-light); font-size: 13px; font-weight: 500;">
@@ -66,7 +87,7 @@
             <div class="promo-card promo-student">
                 <span class="promo-badge">Popular</span>
                 <div class="promo-content">
-                    <div style="font-size: 40px; font-weight: 800; opacity: 0.95; line-height: 1; margin-bottom: 6px;">20% OFF</div>
+                    <div class="promo-value">20% OFF</div>
                     <h3>Student Pass</h3>
                     <p>Unlock 20% off your entire meal. Just present your student ID upon checkout.</p>
                     <button class="claim-btn" data-code="STUDENT20" data-title="Student Discount">
@@ -78,7 +99,7 @@
 
             <div class="promo-card promo-senior">
                 <div class="promo-content">
-                    <div style="font-size: 40px; font-weight: 800; opacity: 0.95; line-height: 1; margin-bottom: 6px;">20% OFF</div>
+                    <div class="promo-value">20% OFF</div>
                     <h3>Golden Years</h3>
                     <p>Enjoy 20% discount + VAT exemption for our senior diners. Valid ID required.</p>
                     <button class="claim-btn" data-code="GOLDEN20" data-title="Senior Discount">
@@ -90,7 +111,7 @@
 
             <div class="promo-card promo-pwd">
                 <div class="promo-content">
-                    <div style="font-size: 40px; font-weight: 800; opacity: 0.95; line-height: 1; margin-bottom: 6px;">20% OFF</div>
+                    <div class="promo-value">20% OFF</div>
                     <h3>Inclusion Perks</h3>
                     <p>We honor PWD discounts on all menu items. Have your PWD ID ready for verification.</p>
                     <button class="claim-btn" data-code="INCLUSION" data-title="PWD Discount">
@@ -103,7 +124,7 @@
             <div class="promo-card promo-lent">
                 <span class="promo-badge">Limited Time</span>
                 <div class="promo-content">
-                    <div style="font-size: 40px; font-weight: 800; opacity: 0.95; line-height: 1; margin-bottom: 6px;">40% OFF</div>
+                    <div class="promo-value">40% OFF</div>
                     <h3>Seasonal Feast</h3>
                     <p>40% OFF on all seafood and veggie options during the Lent season. Health is wealth!</p>
                     <button class="claim-btn" data-code="LENT40" data-title="Lent Season Promo">
@@ -116,7 +137,7 @@
             <div class="promo-card promo-welcome">
                 <span class="promo-badge">New User</span>
                 <div class="promo-content">
-                    <div style="font-size: 40px; font-weight: 800; opacity: 0.95; line-height: 1; margin-bottom: 6px;">$5 OFF</div>
+                   <div class="promo-value">$5 OFF</div>
                     <h3>Welcome Treat</h3>
                     <p>Get $5.00 off on your very first order with no minimum spend required!</p>
                     <button class="claim-btn" data-code="WELCOME5" data-title="New User Promo">
@@ -125,9 +146,99 @@
                 </div>
                 <div class="promo-icon-bg"><i data-lucide="party-popper"></i></div>
             </div>
+           
+    <div class="promo-card promo-payday">
+        <div class="promo-content">
+            <div class="promo-value">₱100 OFF</div>
+            <h3>Payday Treat</h3>
+            <p>Treat yourself this payday! Get ₱100 off for a minimum spend of ₱500.</p>
+            <button class="claim-btn" data-code="PAYDAY100" data-title="Payday Treat">
+                <i data-lucide="wallet" class="icon-18"></i> Claim Now
+            </button>
+        </div>
+        <div class="promo-icon-bg"><i data-lucide="banknote"></i></div>
+    </div>
+
+    <div class="promo-card promo-midnight">
+        <div class="promo-content">
+            <div class="promo-value">15% OFF</div>
+            <h3>Midnight Cravings</h3>
+            <p>Valid 10 PM - 2 AM. Perfect for your late-night study sessions!</p>
+            <button class="claim-btn" data-code="MIDNIGHT15" data-title="Midnight Cravings">
+                <i data-lucide="moon" class="icon-18"></i> Claim Now
+            </button>
+        </div>
+        <div class="promo-icon-bg"><i data-lucide="clock"></i></div>
+    </div>
+
+    <div class="promo-card promo-barkada">
+        <div class="promo-content">
+            <div class="promo-value">₱200 OFF</div>
+            <h3>Barkada Bundle</h3>
+            <p>Gather the squad! Get ₱200 off for orders above ₱1,200.</p>
+            <button class="claim-btn" data-code="BARKADA200" data-title="Barkada Bundle">
+                <i data-lucide="users" class="icon-18"></i> Claim Now
+            </button>
+        </div>
+        <div class="promo-icon-bg"><i data-lucide="smile"></i></div>
+    </div>
+
+    <div class="promo-card promo-freeship">
+        <span class="promo-badge">Best Value</span>
+        <div class="promo-content">
+            <div class="promo-value">FREE SHIPPING</div>
+            <h3>Munch Delivery</h3>
+            <p>No delivery fee! Automatic for orders over ₱1,000 or use this voucher.</p>
+            <button class="claim-btn" data-code="FREESHIP" data-title="Free Delivery">
+                <i data-lucide="truck" class="icon-18"></i> Claim Now
+            </button>
+        </div>
+        <div class="promo-icon-bg"><i data-lucide="package"></i></div>
+    </div>
+
+    </div>
 
         </div>
     </main>
+
+    <!-- WALLET MODAL -->
+    <div id="walletModal" class="modal-overlay">
+        <div class="wallet-modal-content">
+            <div class="wallet-modal-header">
+                <div class="wallet-modal-header-top">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div style="width:42px;height:42px;background:rgba(255,255,255,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                            <i data-lucide="wallet" style="width:22px;height:22px;"></i>
+                        </div>
+                        <div>
+                            <h2>My Wallet</h2>
+                            <p>Your claimed vouchers</p>
+                        </div>
+                    </div>
+                    <button class="wallet-modal-close" onclick="closeModal()">
+                        <i data-lucide="x" style="width:18px;height:18px;"></i>
+                    </button>
+                </div>
+                <div class="wallet-modal-stats">
+                    <div class="wallet-stat">
+                        <span class="wallet-stat-val" id="walletStatClaimed">0</span>
+                        <span class="wallet-stat-lbl">Claimed</span>
+                    </div>
+                    <div class="wallet-stat">
+                        <span class="wallet-stat-val" id="walletStatUsed">0</span>
+                        <span class="wallet-stat-lbl">Used</span>
+                    </div>
+                    <div class="wallet-stat">
+                        <span class="wallet-stat-val" id="walletStatActive">0</span>
+                        <span class="wallet-stat-lbl">Active</span>
+                    </div>
+                </div>
+            </div>
+            <div class="wallet-modal-body">
+                <div class="wallet-voucher-list" id="walletVoucherList"></div>
+            </div>
+        </div>
+    </div>
 
     <div id="claimModal" class="modal-overlay">
         <div class="modal-content">
@@ -151,32 +262,38 @@
 
     <div id="toastContainer" class="toast-container"></div>
     
-    <footer class="site-footer">
-        <div class="footer-content">
-            <div class="footer-logo">
-                <div class="footer-logo-icon">
-                    <i data-lucide="utensils" class="text-white icon-20"></i>
-                </div>
-                munch.
+  <!-- COPY THIS ENTIRE FOOTER CODE TO ALL YOUR HTML PAGES -->
+<!-- Files to paste into: about.html, promos.html, developers.html -->
+
+<footer class="site-footer">
+    <div class="footer-content">
+        <div class="footer-logo">
+            <div class="footer-logo-icon">
+                <i data-lucide="utensils" class="text-white icon-20"></i>
             </div>
-            <p class="footer-desc">Your magical food hub delivering happiness right to your doorstep. Fast, reliable, and always delicious.</p>
-            <div class="footer-links">
-                <a href="index.html">Home</a>
-                <a href="order.html">Order</a>
-                <a href="promos.html">Promos</a>
-                <a href="about.html">About Us</a>
-                <a href="developers.html">Developers</a>
-            </div>
-            <div class="footer-social">
-                <i data-lucide="facebook"></i>
-                <i data-lucide="instagram"></i>
-                <i data-lucide="twitter"></i>
-            </div>
-            <div class="footer-bottom">
-                &copy; 2026 munch. All rights reserved.
-            </div>
+            munch.
         </div>
-    </footer>
+        <p class="footer-desc">Fast, reliable, and always delicious.</p>
+        
+        <div class="footer-links">
+            <a href="index.html">Home</a>
+            <a href="order.html">Order</a>
+            <a href="promos.html">Promos</a>
+            <a href="about.html">About Us</a>
+            <a href="developers.html">Developers</a>
+        </div>
+
+        <div class="footer-social">
+            <i data-lucide="facebook"></i>
+            <i data-lucide="instagram"></i>
+            <i data-lucide="twitter"></i>
+        </div>
+
+        <div class="footer-bottom">
+            &copy; 2026 munch. All rights reserved.
+        </div>
+    </div>
+</footer>
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="script.js"></script>

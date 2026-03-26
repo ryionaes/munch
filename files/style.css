@@ -34,6 +34,12 @@ body {
     min-height: 100vh;
 }
 
+/* Para hindi masira ang split-screen sa order.html */
+body.order-layout {
+    height: 100vh;
+    overflow: hidden;
+}
+
 ::selection {
     background-color: var(--light-orange);
     color: var(--dark-orange);
@@ -42,11 +48,31 @@ body {
 .text-white { color: white !important; }
 .icon-22 { width: 22px; height: 22px; }
 
-::-webkit-scrollbar { width: 8px; height: 0px; }
-::-webkit-scrollbar-track { background: var(--bg-gray); }
-::-webkit-scrollbar-thumb { background: #ddd; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #ccc; }
+/* ==========================================
+   MODERN SCROLLBAR (SLEEK & THEMED)
+   ========================================== */
+/* Para sa Chrome, Edge, at Safari */
+::-webkit-scrollbar { 
+    width: 6px; /* Pinanipis natin */
+    height: 6px; 
+}
+::-webkit-scrollbar-track { 
+    background: transparent; /* Tinanggal yung gray background para malinis */
+    margin: 10px 0; /* Para hindi sagad sa dulo yung scrollbar */
+}
+::-webkit-scrollbar-thumb { 
+    background: rgba(255, 107, 53, 0.4); /* Light transparent orange */
+    border-radius: 10px; 
+}
+::-webkit-scrollbar-thumb:hover { 
+    background: var(--primary-orange); /* Solid orange pag tinapatan ng mouse */
+}
 
+/* Para sa Firefox fallback */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 107, 53, 0.4) transparent;
+}
 .hidden { display: none !important; }
 
 
@@ -155,6 +181,16 @@ body {
 @keyframes fadeOutRight {
     from { transform: translateX(0); opacity: 1; }
     to { transform: translateX(120%); opacity: 0; }
+}
+
+@keyframes slideInUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes fadeOutDown {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(30px); opacity: 0; }
 }
 
 /* ==========================================
@@ -457,19 +493,100 @@ select:focus { border-color: var(--primary-orange); }
 .wallet-text h4 { font-size: 12px; color: var(--text-light); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
 .wallet-text p { font-size: 20px; font-weight: 800; color: var(--text-dark); }
 
-.voucher-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; padding-bottom: 20px; }
+.voucher-grid {
+    display: grid;
+    /* Pinipilit nating maging 3 columns para sa 3x3 look */
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 30px;
+    padding-bottom: 50px;
+    width: 100%;
+}
 .promo-card {
-    border-radius: var(--radius-lg); padding: 32px 30px 28px; color: white; position: relative; overflow: hidden;
-    min-height: 260px; display: flex; flex-direction: column; justify-content: space-between;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: default; box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    background: linear-gradient(135deg, #FF6B35, #FF9F43) !important;
+    border-radius: var(--radius-lg);
+    padding: 32px 30px 28px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+    min-height: 260px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: default;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+}
+
+.promo-card.promo-student, 
+.promo-card.promo-senior, 
+.promo-card.promo-pwd, 
+.promo-card.promo-lent, 
+.promo-card.promo-welcome, 
+.promo-card.promo-payday, 
+.promo-card.promo-midnight, 
+.promo-card.promo-barkada, 
+.promo-card.promo-freeship { 
+    background: linear-gradient(135deg, #FF6B35, #FF9F43) !important; 
 }
 .promo-card:hover { transform: translateY(-10px) scale(1.02); box-shadow: 0 20px 50px rgba(0,0,0,0.18); }
 
-.promo-card.promo-student { background: linear-gradient(135deg, #FF6B35, #FF9F43); }
-.promo-card.promo-senior { background: linear-gradient(135deg, #2C3E50, #4CA1AF); }
-.promo-card.promo-pwd { background: linear-gradient(135deg, #27AE60, #11998E); }
-.promo-card.promo-lent { background: linear-gradient(135deg, #8E44AD, #667eea); }
-.promo-card.promo-welcome { background: linear-gradient(135deg, #E74C3C, #FF4B2B); }
+
+.promo-value {
+    font-size: 36px;
+    font-weight: 800;
+    opacity: 0.95;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+/* ==========================================
+   DISABLED VOUCHER & BUTTON STYLES
+   ========================================== */
+/* Ginagawang grayish ang buong voucher card */
+.promo-card.disabled-card {
+    filter: grayscale(100%); /* Ang magic command! */
+    opacity: 0.7; /* Bahagyang transparent para halatang inactive */
+    cursor: not-allowed;
+    position: relative;
+}
+
+/* Green styling para sa Claimed button */
+.claim-btn.claimed-btn {
+    background: #27AE60 !important;
+    color: white !important;
+    cursor: default;
+    box-shadow: none !important;
+}
+
+.claim-btn.claimed-btn svg {
+    color: white !important;
+    stroke: white !important;
+}
+
+/* Tinatanggal ang hover animation sa claimed button */
+.claim-btn.claimed-btn:hover {
+    transform: none !important;
+    background: #27AE60 !important;
+}
+
+/* Gray styling para sa Unclaimable button */
+.claim-btn.btn-disabled {
+    background: #666 !important;
+    color: #ccc !important;
+    cursor: not-allowed;
+    box-shadow: none !important;
+}
+
+/* Tinatanggal ang hover animation sa disabled button */
+.claim-btn.btn-disabled:hover {
+    transform: none !important;
+    background: #888888 !important;
+}
+
+/* Optional: Pwedeng lagyan ng overlay text na "UNCLAIMABLE" sa tapat ng card */
+.promo-card.disabled-card::after {
+    display: none !important; /* Force hide yung text overlay */
+}
 
 .promo-card::before, .promo-card::after {
     content: ''; position: absolute; width: 22px; height: 22px; background: var(--bg-gray);
@@ -594,6 +711,42 @@ select:focus { border-color: var(--primary-orange); }
 .footer-note { text-align: center; padding: 40px; color: var(--text-light); font-size: 13px; }
 
 /* ==========================================
+   WALLET MODAL
+   ========================================== */
+.wallet-summary { cursor: pointer; transition: all 0.3s ease; }
+.wallet-summary:hover { box-shadow: 0 8px 25px rgba(255,107,53,0.15); transform: translateY(-2px); border-color: rgba(255,107,53,0.2) !important; }
+.wallet-summary-hint { font-size: 11px; color: var(--primary-orange); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+.wallet-modal-content { background: var(--white); border-radius: 28px; width: 90%; max-width: 560px; box-shadow: 0 30px 60px rgba(0,0,0,0.2); animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; }
+.wallet-modal-header { background: linear-gradient(135deg, #FF6B35, #FF9F43); padding: 30px 35px 25px; color: white; border-radius: 28px 28px 0 0; flex-shrink: 0; }
+.wallet-modal-header h2 { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+.wallet-modal-header p { font-size: 13px; opacity: 0.85; font-weight: 500; }
+.wallet-modal-header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.wallet-modal-close { background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; font-family: 'Poppins', sans-serif; }
+.wallet-modal-close:hover { background: rgba(255,255,255,0.35); }
+.wallet-modal-stats { display: flex; gap: 20px; margin-top: 5px; }
+.wallet-stat { background: rgba(255,255,255,0.2); backdrop-filter: blur(5px); padding: 8px 16px; border-radius: 12px; text-align: center; }
+.wallet-stat-val { font-size: 20px; font-weight: 800; display: block; }
+.wallet-stat-lbl { font-size: 10px; opacity: 0.85; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; }
+
+.wallet-modal-body { overflow-y: auto; padding: 25px 35px 30px; flex: 1; }
+.wallet-voucher-list { display: flex; flex-direction: column; gap: 14px; }
+.wallet-voucher-item { display: flex; align-items: center; gap: 16px; background: var(--bg-gray); border-radius: 18px; padding: 16px 20px; transition: 0.3s; border: 1.5px solid transparent; position: relative; overflow: hidden; }
+.wallet-voucher-item:hover { border-color: rgba(255,107,53,0.2); background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.06); }
+.wallet-voucher-item.used-voucher { opacity: 0.55; }
+.wallet-voucher-item.used-voucher::after { content: 'USED'; position: absolute; top: 50%; right: 20px; transform: translateY(-50%); background: #E74C3C; color: white; font-size: 10px; font-weight: 800; letter-spacing: 1.5px; padding: 4px 10px; border-radius: 6px; }
+.wallet-voucher-icon { width: 48px; height: 48px; background: linear-gradient(135deg, #FF6B35, #FF9F43); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0; }
+.wallet-voucher-icon.used-icon { background: #ccc; }
+.wallet-voucher-info { flex: 1; }
+.wallet-voucher-name { font-size: 15px; font-weight: 700; color: var(--text-dark); margin-bottom: 3px; }
+.wallet-voucher-code { font-family: monospace; font-size: 12px; font-weight: 700; color: var(--primary-orange); background: var(--light-orange); padding: 2px 8px; border-radius: 6px; display: inline-block; }
+.wallet-voucher-code.used-code { color: #999; background: #f0f0f0; }
+.wallet-empty { text-align: center; padding: 50px 20px; color: var(--text-light); }
+.wallet-empty i { width: 60px; height: 60px; color: #ddd; margin: 0 auto 15px; display: block; }
+.wallet-empty p { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: var(--text-dark); }
+.wallet-empty small { font-size: 13px; }
+
+/* ==========================================
    MODALS & TOASTS
    ========================================== */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(44, 62, 80, 0.6); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; }
@@ -621,8 +774,8 @@ select:focus { border-color: var(--primary-orange); }
 .checkout-td.qty { color: #666; }
 .checkout-td.price { font-weight: 600; text-align: right; color: #FF6B35; }
 
-.toast-container { position: fixed; bottom: 30px; right: 30px; z-index: 10000; display: flex; flex-direction: column; gap: 12px; }
-.toast { background: white; color: var(--text-dark); padding: 16px 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 14px; animation: slideInRight 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; border-left: 5px solid var(--primary-orange); }
+.toast-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.toast { background: white; color: var(--text-dark); padding: 16px 24px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 12px; font-weight: 600; font-size: 14px; animation: slideInUp 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; border-left: 5px solid var(--primary-orange); white-space: nowrap; }
 .toast.success { border-left-color: #27AE60; } 
 .toast.error { border-left-color: #E74C3C; } 
 .toast.info { border-left-color: #3498DB; }
@@ -635,80 +788,164 @@ select:focus { border-color: var(--primary-orange); }
     .timeline-dot { display: none; }
 }
 @media (max-width: 768px) {
-    .nav-btn { display: none; }
-    .carousel-outer { padding: 0 20px; }
-    .dev-card { padding: 40px 20px; }
-    .navbar { padding: 0 20px; }
-    .nav-links { display: none; }
-    .wallet-summary { flex-direction: column; gap: 15px; text-align: center; }
+    .voucher-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Para sa Tablet (Gagawing 2 columns lang) */
+@media (max-width: 1100px) {
+    .voucher-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 /* ==========================================
-   CURRENCY SWITCHER
+   CUSTOM CURRENCY DROPDOWN (100% Working Images)
    ========================================== */
-.currency-switcher select {
-    appearance: none;
-    background: var(--light-orange) url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23FF6B35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>') no-repeat right 12px center;
-    padding: 8px 36px 8px 16px;
-    border-radius: 12px;
-    border: 1px solid transparent;
+.custom-currency-dropdown {
+    position: relative;
     font-family: 'Poppins', sans-serif;
+    width: 110px; /* Tamang width para hindi masyadong mahaba */
+}
+
+.dropdown-selected {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: 2px solid var(--primary-orange);
+    border-radius: 15px; /* Pill shape na nasa screenshot mo */
+    background: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-dark);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(255, 107, 53, 0.05);
+}
+
+.dropdown-selected img, .dropdown-item img {
+    width: 20px;
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.dropdown-selected:hover {
+    background-color: var(--light-orange);
+    transform: translateY(-2px);
+}
+
+/* Dropdown Menu Styles */
+.dropdown-options {
+    display: none; /* Nakatago by default */
+    position: absolute;
+    top: 115%;
+    left: 0;
+    width: 100%;
+    background: white;
+    border: 1px solid var(--primary-orange);
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.dropdown-options.show {
+    display: block;
+    animation: popIn 0.2s ease-out;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    cursor: pointer;
     font-size: 14px;
     font-weight: 600;
+    transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+    background: var(--light-orange);
     color: var(--primary-orange);
-    outline: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 10px rgba(255, 107, 53, 0.1);
 }
 
-.currency-switcher select:hover, 
-.currency-switcher select:focus {
-    background-color: var(--primary-orange);
-    color: white;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="%23FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>');
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(255, 107, 53, 0.2);
-}
-
-/* ==========================================
-   CHECKOUT CONFIRM BUTTON
-   ========================================== */
 /* ==========================================
    CHECKOUT CONFIRM BUTTON (FIXED)
    ========================================== */
 .btn-checkout-confirm {
-    background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange)) !important;
-    color: white !important;
-    padding: 18px 24px !important;
-    border-radius: 16px !important;
-    border: none !important;
-    font-weight: 800 !important;
-    font-size: 16px !important;
-    cursor: pointer !important;
-    width: 100% !important;
-    margin-top: 25px !important;
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-    box-shadow: 0 10px 25px rgba(255, 107, 53, 0.4) !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    gap: 10px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 1.5px !important;
+    background: var(--primary-orange);
+    color: white;
+    padding: 16px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
 }
 
 .btn-checkout-confirm:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: 0 15px 35px rgba(255, 107, 53, 0.6) !important;
-    background: linear-gradient(135deg, #ff8559, var(--dark-orange)) !important;
+    background: var(--dark-orange);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
+} 
+
+/* ==========================================
+   PHONE INPUT GROUP (CUTE STYLE)
+   ========================================== */
+.phone-input-group {
+    display: flex;
+    align-items: center;
+    background: var(--bg-gray);
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.3s;
 }
 
-.btn-checkout-confirm:active {
-    transform: translateY(2px) !important;
-    box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3) !important;
+/* Kapag pinindot ang input, iilaw yung buong group */
+.phone-input-group:focus-within {
+    border-color: var(--primary-orange);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.1);
 }
 
-.btn-checkout-confirm i {
-    width: 22px !important;
-    height: 22px !important;
+/* Yung maliit na box ng +63 */
+.country-code {
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.04); /* Medyo mas dark ng konti sa input */
+    font-weight: 700;
+    color: var(--text-dark);
+    border-right: 1px solid #ddd;
+    font-size: 14px;
+    min-width: 60px;
+    text-align: center;
+}
+
+/* Yung text field mismo */
+.phone-input {
+    flex: 1;
+    padding: 14px 16px;
+    border: none;
+    background: transparent;
+    font-family: 'Poppins', sans-serif;
+    font-size: 14px;
+    outline: none;
+    color: var(--text-dark);
+}
+
+/* Tinatanggal ang up/down arrows ng type="number" sa Chrome/Safari */
+.phone-input::-webkit-outer-spin-button,
+.phone-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }

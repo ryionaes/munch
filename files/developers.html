@@ -23,13 +23,33 @@
             <a href="about.html">About</a>
         </div>
         <div class="user-profile" style="display: flex; align-items: center; gap: 15px;">
-    <div class="currency-switcher">
-        <select id="currencySelect" onchange="changeCurrency(this.value)">
-            <option value="USD">🇺🇸 USD</option>
-            <option value="PHP">🇵🇭 PHP</option>
-            <option value="EUR">🇪🇺 EUR</option>
-            <option value="GBP">🇬🇧 GBP</option>
-        </select>
+   <div class="custom-currency-dropdown">
+        <div class="dropdown-selected" onclick="toggleDropdown()">
+            <img src="https://flagcdn.com/w20/ph.png" alt="PHP" id="selectedFlag">
+            <span id="selectedCurrency">PHP</span>
+            <i data-lucide="chevron-down" style="width: 16px; margin-left: auto; color: var(--primary-orange);"></i>
+        </div>
+        
+        <div class="dropdown-options" id="currencyOptions">
+            <div class="dropdown-item" onclick="selectCurrency('PHP', 'ph.png')">
+                <img src="https://flagcdn.com/w20/ph.png" alt="PH"> PHP
+            </div>
+             <div class="dropdown-item" onclick="selectCurrency('USD', 'us.png')">
+                <img src="https://flagcdn.com/w20/us.png" alt="US"> USD
+            </div>
+            <div class="dropdown-item" onclick="selectCurrency('EUR', 'eu.png')">
+                <img src="https://flagcdn.com/w20/eu.png" alt="EU"> EUR
+            </div>
+            <div class="dropdown-item" onclick="selectCurrency('GBP', 'gb.png')">
+                <img src="https://flagcdn.com/w20/gb.png" alt="GB"> GBP
+            </div>
+            <div class="dropdown-item" onclick="selectCurrency('JPY', 'jp.png')">
+                <img src="https://flagcdn.com/w20/jp.png" alt="JP"> JPY
+            </div>
+            <div class="dropdown-item" onclick="selectCurrency('KRW', 'kr.png')">
+                <img src="https://flagcdn.com/w20/kr.png" alt="KR"> KRW
+            </div>
+        </div>
     </div>
     <a href="developers.html" class="dev-info-icon" title="About Developers">
         <i data-lucide="info" class="icon-20"></i>
@@ -131,34 +151,34 @@
     </section>
 
     <footer class="site-footer">
-                <div class="footer-content">
-                    <div class="footer-logo">
-                        <div class="footer-logo-icon">
-                            <i data-lucide="utensils" class="text-white icon-20"></i>
-                        </div>
-                        munch.
-                    </div>
-                    <p class="footer-desc">Your magical food hub delivering happiness right to your doorstep. Fast, reliable, and always delicious.</p>
-                    
-                    <div class="footer-links">
-                        <a href="index.html">Home</a>
-                        <a href="order.html">Order</a>
-                        <a href="promos.html">Promos</a>
-                        <a href="about.html">About Us</a>
-                        <a href="developers.html">Developers</a>
-                    </div>
-
-                    <div class="footer-social">
-                        <i data-lucide="facebook"></i>
-                        <i data-lucide="instagram"></i>
-                        <i data-lucide="twitter"></i>
-                    </div>
-
-                    <div class="footer-bottom">
-                        &copy; 2026 munch. All rights reserved.
-                    </div>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <div class="footer-logo-icon">
+                    <i data-lucide="utensils" class="text-white icon-20"></i>
                 </div>
-            </footer>
+                munch.
+            </div>
+            <p class="footer-desc">Fast, reliable, and always delicious.</p>
+            
+            <div class="footer-links">
+                <a href="index.html">Home</a>
+                <a href="order.html">Order</a>
+                <a href="promos.html">Promos</a>
+                <a href="about.html">About Us</a>
+                <a href="developers.html">Developers</a>
+            </div>
+
+            <div class="footer-social">
+                <i data-lucide="facebook"></i>
+                <i data-lucide="instagram"></i>
+                <i data-lucide="twitter"></i>
+            </div>
+
+            <div class="footer-bottom">
+                &copy; 2026 munch. All rights reserved.
+            </div>
+        </div>
+    </footer>
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="script.js"></script>
