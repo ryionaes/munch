@@ -683,15 +683,18 @@ select:focus { border-color: var(--primary-orange); }
 /* ==========================================
    FOOTER
    ========================================== */
+/* Base footer styles (for when it's outside main-content) */
 .site-footer { 
     background-color: var(--text-dark); 
     color: var(--white); 
     padding: 60px 40px 40px; 
-    
-    /* Negative margins pull the footer out to the absolute edges */
-    margin: 80px -40px 0 -40px; 
-    
+    margin: 80px 0 0 0; /* No negative margins by default */
     border-radius: 32px 32px 0 0; 
+}
+
+/* Modifier ONLY for when footer is inside main-content (like index.html) */
+.main-content .site-footer {
+    margin: 80px -40px 0 -40px;
 }
 .order-layout .site-footer {
     margin: 80px -50px 0 -50px;
