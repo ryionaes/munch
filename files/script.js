@@ -137,7 +137,7 @@ function showToast(message, type = 'success') {
 // ==========================================
 // ADD / DELETE ORDER
 // ==========================================
-function addOrder(foodName, category, price, quantity, deliveryTime, rating) {
+function addOrder(foodName, category, price, quantity, deliveryTime, rating, addonLabels = []) {
     if (!foodName || foodName === 'null') return;
     if (!Array.isArray(orders)) orders = [];
 
@@ -150,7 +150,14 @@ function addOrder(foodName, category, price, quantity, deliveryTime, rating) {
         }
     });
 
-    const existingOrder = orders.find(order => order.foodName === foodName);
+    // 1. Format the cart name to include add-ons (prevents merging standard items with customized ones)
+    let cartName = foodName;
+    if (addonLabels && addonLabels.length > 0) {
+        cartName = `${foodName} <span style="font-size: 11px; color: var(--text-light); display: block; line-height: 1.2;">(+ ${addonLabels.join(', ')})</span>`;
+    }
+
+    // 2. Search if this EXACT configuration already exists in the cart
+    const existingOrder = orders.find(order => order.foodName === cartName);
 
     if (existingOrder) {
         existingOrder.quantity += parseInt(quantity);
@@ -159,7 +166,7 @@ function addOrder(foodName, category, price, quantity, deliveryTime, rating) {
     } else {
         const order = {
             id: Date.now(),
-            foodName,
+            foodName: cartName, // Saves the name WITH the visual add-ons text
             category,
             price: parseFloat(price),
             quantity: parseInt(quantity),
@@ -174,9 +181,11 @@ function addOrder(foodName, category, price, quantity, deliveryTime, rating) {
     localStorage.setItem('foodhub_orders', JSON.stringify(orders));
     renderTable();
     updateStats();
-    showToast(`Added ${foodName} to cart!`, 'success');
+    
+    // Clean toast message popup without HTML tags
+    const toastName = addonLabels && addonLabels.length > 0 ? `${foodName} with add-ons` : foodName;
+    showToast(`Added ${toastName} to cart!`, 'success');
 }
-
 function deleteOrder(orderId) {
     orders = orders.filter(order => order.id !== orderId);
     localStorage.setItem('foodhub_orders', JSON.stringify(orders));
