@@ -1432,3 +1432,21 @@ select:focus { border-color: var(--primary-orange); }
 .addon-price { font-size: 13px; color: var(--text-light); font-weight: 600; }
 .addon-row:has(input:checked) { border-color: var(--primary-orange); background: #FFF4E5; }
 .addon-row:has(input:checked) .addon-price { color: var(--primary-orange); }
+/* ==========================================
+   NEW ADDITIONS: SPINNER & VALIDATION
+   ========================================== */
+@keyframes spin { 
+    100% { transform: rotate(360deg); } 
+}
+.icon-spin {
+    animation: spin 1s linear infinite;
+}
+
+.input-error {
+    border-color: #E74C3C !important;
+    box-shadow: 0 0 0 4px rgba(231, 76, 60, 0.1) !important;
+}
+
+.input-success {
+    border-color: #27AE60 !important;
+}

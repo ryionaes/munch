@@ -321,10 +321,13 @@ window.openOrderModal = (id) => {
                             <div style="flex: 1;">
                                 <p style="font-size: 14px; color: #5d6d7e;">${itemsSummary}</p>
                             </div>
-                            <div style="text-align: right;">
-                                <div style="font-size: 22px; font-weight: 800; color: var(--primary-orange);">${formatHistoryPrice(order.total, order.currency)}</div>
-                                <button onclick="viewOrderDetails('${order.orderId}', '${order.status}')" style="background: var(--light-orange); color: var(--primary-orange); border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer;">View Details</button>
-                            </div>
+                            <div style="text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+    <div style="font-size: 22px; font-weight: 800; color: var(--primary-orange);">${formatHistoryPrice(order.total, order.currency)}</div>
+    <div style="display: flex; gap: 8px;">
+        <button onclick="reorderPastMeal('${order.orderId}')" style="background: white; color: var(--text-dark); border: 1px solid #ddd; padding: 6px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s;" onmouseover="this.style.borderColor='var(--primary-orange)'; this.style.color='var(--primary-orange)'" onmouseout="this.style.borderColor='#ddd'; this.style.color='var(--text-dark)'"><i data-lucide="rotate-ccw" style="width: 14px; display: inline-block; vertical-align: middle; margin-right: 4px;"></i> Reorder</button>
+        <button onclick="viewOrderDetails('${order.orderId}', '${order.status}')" style="background: var(--light-orange); color: var(--primary-orange); border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer;">View Details</button>
+    </div>
+</div>
                         </div>
                     </div>
                 `;

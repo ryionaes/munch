@@ -57,33 +57,42 @@ function changeCurrency(newCurrency) {
 }
 
 function updateAllVisiblePrices() {
-    // 1. Update Food Grid Prices
+    // 1. Update Food Grid Prices (Fixed Regex to include openAddonsModal)
     document.querySelectorAll('.food-card').forEach(card => {
         const btn = card.querySelector('.btn-add-card');
         const priceStrong = card.querySelector('.card-bottom strong');
         if (btn && priceStrong) {
             const onclickStr = btn.getAttribute('onclick');
-            const match = onclickStr.match(/addOrder\([^,]+,\s*'[^']+',\s*([\d.]+)/);
+            // This new regex catches BOTH the old addOrder and the new openAddonsModal
+            const match = onclickStr.match(/(?:addOrder|openAddonsModal)\([^,]+,\s*'[^']+',\s*([\d.]+)/);
             if (match && match[1]) {
-                const usdPrice = parseFloat(match[1]);
-                priceStrong.textContent = formatPrice(usdPrice);
+                const basePrice = parseFloat(match[1]);
+                priceStrong.textContent = formatPrice(basePrice);
             }
         }
     });
 
-    // 2. Sync Dropdowns across pages
-    document.querySelectorAll('#currencySelect').forEach(select => {
-        select.value = currentCurrency;
-    });
+    // 2. Sync Custom Dropdown UI (Updates the flag and text if changed)
+    const flagMap = {
+        'PHP': 'ph.png', 'USD': 'us.png', 'EUR': 'eu.png', 
+        'GBP': 'gb.png', 'JPY': 'jp.png', 'KRW': 'kr.png'
+    };
+    const flagImg = document.getElementById('selectedFlag');
+    const currencyText = document.getElementById('selectedCurrency');
+    
+    if (flagImg && currencyText && flagMap[currentCurrency]) {
+        flagImg.src = `https://flagcdn.com/w20/${flagMap[currentCurrency]}`;
+        currencyText.textContent = currentCurrency;
+    }
 
-    // 3. Re-render Cart and Modal
-   renderTable();
+    // 3. Re-render Cart, Stats, and Modal
+    renderTable();
     updateStats();
     if (document.getElementById('checkoutModal') && document.getElementById('checkoutModal').style.display === 'flex') {
         renderCheckoutTotals();
     }
     
-    // IDAGDAG ITO SA DULO:
+    // 4. Apply region-specific delivery fees
     updateCheckoutRegion(); 
 }
 
@@ -674,97 +683,113 @@ function placeOrder() {
     const phone = phoneEl ? phoneEl.value.trim() : '';
     const paymentMethod = paymentEl ? paymentEl.value : ''; 
 
-    // Validation
-    if (name === '' || address === '' || phone === '') {
+    // 1. Empty Cart Check
+    if (orders.length === 0) {
+        showToast("Your cart is empty! Add some items first.", "error");
+        return;
+    }
+
+    // 2. Basic Empty Field Validation
+    if (name === '' || address === '' || phone === '' || paymentMethod === '') {
         showToast("Please fill in all delivery details.", "error");
         return;
     }
-    if (phone.length < 10) {
-        showToast("Validation Error: Enter a valid phone number.", "error");
+
+    // 3. Robust Phone Regex Validation (7 to 15 digits)
+    const phoneRegex = /^\d{7,15}$/;
+    if (!phoneRegex.test(phone)) {
+        phoneEl.classList.add('input-error');
+        showToast("Please enter a valid phone number (digits only).", "error");
         return;
-    }
-    if (paymentMethod === '') {
-        showToast("Please select a Payment Method.", "error");
-        return;
+    } else {
+        phoneEl.classList.remove('input-error');
     }
 
-    // --- COMPUTATION PARA SA RECEIPT ---
-    let subtotal = orders.reduce((sum, item) => sum + item.subtotal, 0);
-    let deliveryFee = (subtotal >= 1000 || activeCouponId === 'FREESHIP') ? 0 : 50.00;
-    let discountAmount = activeDiscountType === 'flat' ? Math.min(activeDiscount, subtotal) : subtotal * (activeDiscount / 100);
-    let finalTotal = (subtotal - discountAmount) + deliveryFee;
-
-    // --- SAVE ORDER TO DATABASE (Local Storage) ---
-    // --- SAVE ORDER TO DATABASE (Local Storage) ---
-    const orderId = 'MUNCH-' + Math.floor(100000 + Math.random() * 900000); // Generate random Order ID
-    
-    const newOrderData = {
-        orderId: orderId,
-        date: new Date().toISOString(),
-        customer: { name, address, phone },
-        items: [...orders], // Copy of current cart
-        subtotal: subtotal,
-        discount: discountAmount,
-        deliveryFee: deliveryFee,
-        total: finalTotal,
-        paymentMethod: paymentMethod,
-        status: 'Preparing', // <-- Pansinin: Nilagyan ko ng comma dito
-        currency: currentCurrency // <--- ITO YUNG MAGIC WORD NA IDINAGDAG NATIN
-    };
-    // 1. Save as Active Order (para sa track.html)
-    localStorage.setItem('munch_active_order', JSON.stringify(newOrderData));
-
-    // 2. Save to Past Orders History
-    let orderHistory = JSON.parse(localStorage.getItem('munch_order_history')) || [];
-    orderHistory.push(newOrderData);
-    localStorage.setItem('munch_order_history', JSON.stringify(orderHistory));
-
-    // --- POPULATE AND SHOW RECEIPT MODAL ---
-    document.getElementById('receiptOrderId').textContent = orderId;
-    document.getElementById('receiptTotalAmount').textContent = formatPrice(finalTotal);
-    
-    const receiptList = document.getElementById('receiptItemsList');
-    receiptList.innerHTML = '';
-    orders.forEach(item => {
-        receiptList.innerHTML += `
-            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; color: var(--text-dark);">
-                <span style="font-weight: 600;">${item.quantity}x ${item.foodName}</span>
-                <span>${formatPrice(item.subtotal)}</span>
-            </div>
-        `;
-    });
-
-    // Mark voucher as used
-    if (activeCouponId && claimedCoupons[activeCouponId]) {
-        claimedCoupons[activeCouponId] = { claimed: true, used: true };
-        localStorage.setItem('foodhub_wallet', JSON.stringify(claimedCoupons));
-    }
-
-    // Clear Cart
-    orders = [];
-    activeDiscount = 0;
-    activeDiscountType = 'percent';
-    activeCouponId = '';
-    localStorage.setItem('foodhub_orders', JSON.stringify(orders));
-    localStorage.setItem('foodhub_active_discount', 0);
-    localStorage.setItem('foodhub_active_discount_type', 'percent');
-    localStorage.setItem('foodhub_active_coupon_id', '');
-
-    // Reset UI & Show Receipt
-    renderTable();
-    updateStats();
-    
-    // Itago ang checkout modal at ilabas ang receipt modal
-    document.getElementById('checkoutModal').style.display = 'none';
-    document.getElementById('receiptModal').style.display = 'flex';
-    
+    // 4. Trigger Loading State UX
+    const confirmBtn = document.querySelector('.btn-checkout-confirm');
+    const originalBtnText = confirmBtn.innerHTML;
+    confirmBtn.innerHTML = '<i data-lucide="loader" class="icon-spin" style="width: 18px; display: inline-block; vertical-align: middle;"></i> Processing Payment...';
+    confirmBtn.disabled = true;
+    confirmBtn.style.opacity = '0.7';
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    
-    // Clear inputs
-    if (nameEl) nameEl.value = '';
-    if (addrEl) addrEl.value = '';
-    if (phoneEl) phoneEl.value = '';
-    if (paymentEl) paymentEl.value = '';
+
+    // Simulate network request delay (1.5 seconds)
+    setTimeout(() => {
+        // --- COMPUTATION PARA SA RECEIPT ---
+        let subtotal = orders.reduce((sum, item) => sum + item.subtotal, 0);
+        let deliveryFee = (subtotal >= 1000 || activeCouponId === 'FREESHIP') ? 0 : getDynamicDeliveryFee();
+        let discountAmount = activeDiscountType === 'flat' ? Math.min(activeDiscount, subtotal) : subtotal * (activeDiscount / 100);
+        let finalTotal = (subtotal - discountAmount) + deliveryFee;
+
+        const orderId = 'MUNCH-' + Math.floor(100000 + Math.random() * 900000); 
+        
+        const newOrderData = {
+            orderId: orderId,
+            date: new Date().toISOString(),
+            customer: { name, address, phone },
+            items: [...orders], 
+            subtotal: subtotal,
+            discount: discountAmount,
+            deliveryFee: deliveryFee,
+            total: finalTotal,
+            paymentMethod: paymentMethod,
+            status: 'Preparing', 
+            currency: currentCurrency 
+        };
+        
+        localStorage.setItem('munch_active_order', JSON.stringify(newOrderData));
+
+        let orderHistory = JSON.parse(localStorage.getItem('munch_order_history')) || [];
+        orderHistory.push(newOrderData);
+        localStorage.setItem('munch_order_history', JSON.stringify(orderHistory));
+
+        document.getElementById('receiptOrderId').textContent = orderId;
+        document.getElementById('receiptTotalAmount').textContent = formatPrice(finalTotal);
+        
+        const receiptList = document.getElementById('receiptItemsList');
+        receiptList.innerHTML = '';
+        orders.forEach(item => {
+            receiptList.innerHTML += `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; color: var(--text-dark);">
+                    <span style="font-weight: 600;">${item.quantity}x ${item.foodName}</span>
+                    <span>${formatPrice(item.subtotal)}</span>
+                </div>
+            `;
+        });
+
+        if (activeCouponId && claimedCoupons[activeCouponId]) {
+            claimedCoupons[activeCouponId] = { claimed: true, used: true };
+            localStorage.setItem('foodhub_wallet', JSON.stringify(claimedCoupons));
+        }
+
+        // Clear Cart
+        orders = [];
+        activeDiscount = 0;
+        activeDiscountType = 'percent';
+        activeCouponId = '';
+        localStorage.setItem('foodhub_orders', JSON.stringify(orders));
+        localStorage.setItem('foodhub_active_discount', 0);
+        localStorage.setItem('foodhub_active_discount_type', 'percent');
+        localStorage.setItem('foodhub_active_coupon_id', '');
+
+        renderTable();
+        updateStats();
+        
+        // Reset Button and Modals
+        confirmBtn.innerHTML = originalBtnText;
+        confirmBtn.disabled = false;
+        confirmBtn.style.opacity = '1';
+        
+        document.getElementById('checkoutModal').style.display = 'none';
+        document.getElementById('receiptModal').style.display = 'flex';
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        
+        if (nameEl) nameEl.value = '';
+        if (addrEl) addrEl.value = '';
+        if (phoneEl) phoneEl.value = '';
+        if (paymentEl) paymentEl.value = '';
+    }, 1500); 
 }
 
 
@@ -1756,3 +1781,62 @@ document.addEventListener('click', function(e) {
         }
     }
 });
+// ==========================================
+// DYNAMIC DELIVERY & CROSS-TAB SYNC
+// ==========================================
+const DYNAMIC_FEES = {
+    PHP: 50.00,
+    USD: 2.00,
+    EUR: 2.00,
+    GBP: 1.50,
+    JPY: 300,
+    KRW: 2500
+};
+
+function getDynamicDeliveryFee() {
+    return DYNAMIC_FEES[currentCurrency] !== undefined ? DYNAMIC_FEES[currentCurrency] : 50.00;
+}
+
+// Update renderCheckoutTotals to use the dynamic fee
+const originalRenderTotals = renderCheckoutTotals;
+renderCheckoutTotals = function() {
+    originalRenderTotals();
+    const subtotal = orders.reduce((sum, item) => sum + item.subtotal, 0);
+    let deliveryFee = (subtotal >= 1000 || activeCouponId === 'FREESHIP') ? 0 : getDynamicDeliveryFee();
+    
+    // Recalculate and update the UI with the dynamic fee
+    const discountAmount = activeDiscountType === 'flat' ? Math.min(activeDiscount, subtotal) : subtotal * (activeDiscount / 100);
+    const finalTotal = (subtotal - discountAmount) + deliveryFee;
+    
+    document.getElementById('summaryTotal').textContent = formatPrice(finalTotal);
+};
+
+// Sync cart across multiple tabs instantly
+window.addEventListener('storage', (e) => {
+    if (e.key === 'foodhub_orders') {
+        orders = JSON.parse(e.newValue) || [];
+        renderTable();
+        updateStats();
+    }
+});
+
+// ==========================================
+// REORDER FEATURE
+// ==========================================
+window.reorderPastMeal = function(orderId) {
+    const historyData = JSON.parse(localStorage.getItem('munch_order_history')) || [];
+    const pastOrder = historyData.find(o => o.orderId === orderId);
+    
+    if (pastOrder && pastOrder.items) {
+        pastOrder.items.forEach(item => {
+            // Push items back to cart
+            addOrder(item.foodName, item.category, item.price, item.quantity, item.deliveryTime, item.rating);
+        });
+        showToast("Order items added to your cart!", "success");
+        
+        // Redirect to order page after 1 second
+        setTimeout(() => {
+            window.location.href = 'order.html';
+        }, 1000);
+    }
+};
