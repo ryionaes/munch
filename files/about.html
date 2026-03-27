@@ -51,41 +51,78 @@
             </div>
         </div>
     </div>
-    <a href="developers.html" class="dev-info-icon" title="About Developers">
-        <i data-lucide="info" class="icon-20"></i>
-    </a>
+   <a href="history.html" class="dev-info-icon" title="Order History" style="background: #FFF4E5; color: #FF6B35;">
+                <i data-lucide="clock-4" class="icon-20"></i>
+            </a> 
+    <div style="position:relative;" id="notifBell">
+    <button onclick="toggleNotifPanel()" title="Notifications" class="dev-info-icon" style="background:#FFF4E5;color:#FF6B35;border:none;cursor:pointer;position:relative;">
+        <i data-lucide="bell" class="icon-20"></i>
+        <span id="notifBadge" style="position:absolute;top:6px;right:6px;width:9px;height:9px;background:#E74C3C;border-radius:50%;border:2px solid white;"></span>
+    </button>
+    <!-- Notification Panel -->
+    <div id="notifPanel" style="display:none;position:absolute;top:calc(100% + 12px);right:0;width:320px;background:white;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.12);border:1px solid #F0F0F0;z-index:9999;overflow:hidden;">
+        <div style="padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F5F5F5;">
+            <span style="font-size:15px;font-weight:800;color:var(--text-dark);">Notifications</span>
+            <span style="font-size:12px;color:var(--primary-orange);font-weight:600;cursor:pointer;">Mark all read</span>
+        </div>
+        <div id="notifList" style="max-height:300px;overflow-y:auto;"></div>
+        <div style="padding:12px 18px;text-align:center;border-top:1px solid #F5F5F5;">
+            <span style="font-size:13px;color:var(--text-light);font-weight:500;">You're all caught up! 🎉</span>
+        </div>
+    </div>
 </div>
-    </nav>
+
+</div>
+
+</nav>
 
     <section class="hero">
         <h1 class="reveal">The Magic Behind<br><span>Your Meal.</span></h1>
         <p class="reveal">We don't just deliver food; we deliver experiences, one curated bite at a time.</p>
     </section>
 
+    
+
     <section class="story-section">
-        <div class="story-grid">
-            <div class="magic-visual reveal">
-                <div class="magic-box">
-                    <i data-lucide="sparkles"></i>
-                </div>
-            </div>
-            <div class="story-text reveal">
-                <h2>A Hunger for Innovation</h2>
-                <p>Magical Munch was born from a late-night craving in 2021. We realized that while food delivery existed, the "magic" of dining out was missing from the doorstep experience.</p>
-                <p>Our team spent a year building a lightning-fast logistics network and partnering with kitchens that prioritize soul over mass-production. Today, we serve thousands of happy munchers daily.</p>
-                <div class="flex-gap-20 mt-30">
-                    <div class="text-center">
+    <div class="story-grid">
+        <div class="magic-visual reveal">
+        <div class="magic-visual-wrapper">
+            <div class="floating-blob blob-1"></div>
+            <div class="floating-blob blob-2"></div>
+            
+            <div class="floating-item item-1"><i data-lucide="pizza"></i></div>
+            <div class="floating-item item-2"><i data-lucide="sandwich"></i></div>
+            <div class="floating-item item-3"><i data-lucide="cup-soda"></i></div>
+            
+            <img src="https://png.pngtree.com/png-vector/20240829/ourmid/pngtree-delicious-and-testy-cheese-burger-png-image_13659847.png" alt="Deluxe Burger Munch" class="main-food-image">
+        </div>
+    </div>
+
+        <div class="story-text reveal">
+            <div class="section-badge">Our Story</div>
+            <h2>A Hunger for <br><span>Innovation</span></h2>
+            <p>Magical Munch was born from a late-night craving in 2021. We realized that while food delivery existed, the "magic" of dining out was missing from the doorstep experience.</p>
+            <p>Our team spent a year building a lightning-fast logistics network and partnering with kitchens that prioritize soul over mass-production.</p>
+            
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-icon-sm"><i data-lucide="shopping-bag"></i></div>
+                    <div class="stat-info">
                         <span class="stat-val">50k+</span>
-                        <small class="stat-lbl">Orders</small>
+                        <small class="stat-lbl">Orders Delivered</small>
                     </div>
-                    <div class="text-center border-left pl-20">
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-sm"><i data-lucide="chef-hat"></i></div>
+                    <div class="stat-info">
                         <span class="stat-val">120+</span>
-                        <small class="stat-lbl">Kitchens</small>
+                        <small class="stat-lbl">Partner Kitchens</small>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
     <section class="timeline-section">
         <div class="reveal text-center mb-60">
@@ -134,6 +171,45 @@
         </div>
     </section>
 
+    <!-- ==========================================
+         TECHNOLOGIES USED SECTION (For Rubric)
+         ========================================== -->
+    <section class="tech-stack-section">
+        <div class="reveal text-center mb-50">
+            <h2 class="heading-32">Technologies Used</h2>
+            <p class="text-light">The tools and framework that power the munch. experience.</p>
+        </div>
+
+        <div class="tech-grid reveal">
+            <!-- HTML -->
+            <div class="tech-card">
+                <div class="tech-icon"><i data-lucide="layout-template"></i></div>
+                <h3>HTML5</h3>
+                <p>Used for structuring the web application and semantic layout.</p>
+            </div>
+
+            <!-- CSS -->
+            <div class="tech-card">
+                <div class="tech-icon"><i data-lucide="palette"></i></div>
+                <h3>CSS3</h3>
+                <p>Custom styling, modern animations, and responsive design.</p>
+            </div>
+
+            <!-- JavaScript -->
+            <div class="tech-card">
+                <div class="tech-icon"><i data-lucide="file-json"></i></div>
+                <h3>JavaScript</h3>
+                <p>DOM manipulation, form validation, and interactive cart logic.</p>
+            </div>
+
+            <!-- Netlify -->
+            <div class="tech-card">
+                <div class="tech-icon"><i data-lucide="cloud-lightning"></i></div>
+                <h3>Netlify</h3>
+                <p>Cloud hosting and continuous deployment platform.</p>
+            </div>
+        </div>
+    </section>
     <section class="faq-section">
         <div class="reveal text-center mb-50">
             <h2 class="heading-32">Got Questions?</h2>
@@ -171,12 +247,16 @@
                 </div>
             </div>
         </div>
+
+        
     </section>
 
     <section class="cta-section reveal">
         <h2>Ready for a taste?</h2>
         <p>Join over 50,000 people who choose magic every single day.</p>
         <a href="order.html" class="cta-btn">Start My Order</a>
+
+        
     </section>
 
     <!-- COPY THIS ENTIRE FOOTER CODE TO ALL YOUR HTML PAGES -->

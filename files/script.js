@@ -8,16 +8,16 @@ let activeDiscountType = localStorage.getItem('foodhub_active_discount_type') ||
 let activeCouponId = localStorage.getItem('foodhub_active_coupon_id') || '';
 
 const COUPON_DATA = {
-    'lent': { name: 'Mahal na Araw (40% OFF)', value: 40, type: 'percent' },
-    'STUDENT20': { name: 'Student Discount (20% OFF)', value: 20, type: 'percent' },
-    'GOLDEN20': { name: 'Senior Citizen (20% OFF)', value: 20, type: 'percent' },
-    'INCLUSION': { name: 'PWD Discount (20% OFF)', value: 20, type: 'percent' },
-    'LENT40': { name: 'Lent Season Promo (40% OFF)', value: 40, type: 'percent' },
-    'WELCOME5': { name: 'New User Promo (₱280 OFF)', value: 280, type: 'flat' }, // In-adjust sa PHP
-    'PAYDAY100': { name: 'Payday Treat (₱100 OFF)', value: 100, type: 'flat' },
-    'MIDNIGHT15': { name: 'Midnight Cravings (15% OFF)', value: 15, type: 'percent' },
-    'BARKADA200': { name: 'Barkada Bundle (₱200 OFF)', value: 200, type: 'flat' },
-    'FREESHIP': { name: 'Free Delivery', value: 0, type: 'shipping' }
+    'STUDENT20': { name: 'Student Discount (20% OFF)', value: 20, type: 'percent', minSpend: 150 },
+    'GOLDEN20': { name: 'Senior Citizen (20% OFF)', value: 20, type: 'percent', minSpend: 0 },
+    'INCLUSION': { name: 'PWD Discount (20% OFF)', value: 20, type: 'percent', minSpend: 0 },
+    'LENT40': { name: 'Mahal na Araw Promo (40% OFF)', value: 40, type: 'percent', minSpend: 400 },
+    'WELCOME5': { name: 'New User Promo (₱280 OFF)', value: 280, type: 'flat', minSpend: 600 }, 
+    'PAYDAY100': { name: 'Payday Treat (₱100 OFF)', value: 100, type: 'flat', minSpend: 400 },
+    'MIDNIGHT15': { name: 'Midnight Cravings (15% OFF)', value: 15, type: 'percent', minSpend: 250 },
+    'WEEKEND10': { name: 'Weekend Craze (10% OFF)', value: 10, type: 'percent', minSpend: 200 },
+    'BARKADA200': { name: 'Barkada Bundle (₱200 OFF)', value: 200, type: 'flat', minSpend: 800 },
+    'FREESHIP': { name: 'Free Delivery', value: 0, type: 'shipping', minSpend: 300 }
 };
 
 let pendingCouponId = null;
@@ -186,6 +186,21 @@ function updateStats() {
     const totalOrders = orders.length;
     const subtotal = orders.reduce((sum, order) => sum + order.subtotal, 0);
 
+    // AUTO-REMOVE COUPON KUNG BUMABA SA MINIMUM SPEND ANG SUBTOTAL
+    if (activeCouponId && COUPON_DATA[activeCouponId]) {
+        if (subtotal < COUPON_DATA[activeCouponId].minSpend) {
+            activeDiscount = 0;
+            activeDiscountType = 'percent';
+            activeCouponId = '';
+            localStorage.setItem('foodhub_active_coupon_id', '');
+            
+            // ITO ANG BAGONG UPDATE: I-uupdate na niya yung text sa bagong voucher button mo!
+            if (typeof updateCheckoutVoucherLabel === 'function') {
+                updateCheckoutVoucherLabel(); 
+            }
+        }
+    }
+
     const discountAmount = activeDiscountType === 'flat'
         ? Math.min(activeDiscount, subtotal)
         : subtotal * (activeDiscount / 100);
@@ -250,9 +265,23 @@ function confirmClaim() {
             } else {
                 claimedCoupons[code] = true;
                 localStorage.setItem('foodhub_wallet', JSON.stringify(claimedCoupons));
-                const claimedCount = Object.values(claimedCoupons).filter(v => v === true || (v && v.claimed)).length;
+                const claimedCouponsKeys = Object.keys(claimedCoupons).filter(k => {
+                    const v = claimedCoupons[k];
+                    return v === true || (v && v.claimed);
+                });
+                const usedCount = claimedCouponsKeys.filter(k => {
+                    const v = claimedCoupons[k];
+                    return v && typeof v === 'object' && v.used;
+                }).length;
+                const activeCount = claimedCouponsKeys.length - usedCount;
                 const countEl = document.getElementById('claimedCount');
-                if (countEl) countEl.innerText = `${claimedCount} Voucher${claimedCount > 1 ? 's' : ''} Claimed`;
+                if (countEl) {
+                    if (activeCount > 0) {
+                        countEl.innerText = `${activeCount} Active • ${usedCount} Used`;
+                    } else {
+                        countEl.innerText = `${usedCount} Used`;
+                    }
+                }
 
                 // Update the button in the voucher grid immediately
                 const gridBtn = document.querySelector(`.claim-btn[data-code="${code}"]`);
@@ -342,7 +371,8 @@ function openWalletModal() {
 window.openWalletModal = openWalletModal;
 
 function closeModal() {
-    ['couponModal', 'checkoutModal', 'claimModal', 'walletModal'].forEach(id => {
+    // Dinagdag natin yung 'receiptModal' sa array
+    ['couponModal', 'checkoutModal', 'claimModal', 'walletModal', 'receiptModal'].forEach(id => {
         const m = document.getElementById(id);
         if (m) m.style.display = 'none';
     });
@@ -355,27 +385,52 @@ function closeCheckout() {
 }
 
 function renderCouponDropdown() {
-    const select = document.getElementById('couponSelect');
-    const container = document.getElementById('couponContainer');
-    if (!select || !container) return;
+    const list = document.getElementById('checkoutVoucherList');
+    if (!list) return;
 
-    select.innerHTML = '<option value="0">No coupon applied</option>';
+    list.innerHTML = '';
     let hasCoupons = false;
 
     for (let id in claimedCoupons) {
         const cv = claimedCoupons[id];
         const isCl = cv === true || (cv && cv.claimed);
         const isUs = cv && typeof cv === 'object' && cv.used;
+        
         if (isCl && !isUs && COUPON_DATA[id]) {
             hasCoupons = true;
-            const option = document.createElement('option');
-            option.value = id; 
-            option.textContent = COUPON_DATA[id].name;
-            if (id === activeCouponId) option.selected = true;
-            select.appendChild(option);
+            const coupon = COUPON_DATA[id];
+            const isSelected = (id === activeCouponId);
+            const borderStyle = isSelected ? 'border: 2px solid var(--primary-orange); background: rgba(255, 107, 53, 0.05);' : 'border: 1px solid #ddd; background: white;';
+            
+            list.innerHTML += `
+                <div onclick="applyCoupon('${id}')" style="${borderStyle} padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.2s; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin-bottom: 2px;">${coupon.name}</h4>
+                        <p style="font-size: 12px; color: var(--text-light); margin: 0;">Min. Spend: ${formatPrice(coupon.minSpend)}</p>
+                    </div>
+                    ${isSelected ? '<i data-lucide="check-circle" style="color: var(--primary-orange); width: 20px;"></i>' : ''}
+                </div>
+            `;
         }
     }
-    container.style.display = hasCoupons ? 'block' : 'none';
+
+    if (!hasCoupons) {
+        list.innerHTML = '<p style="text-align: center; color: var(--text-light); font-size: 13px; padding: 20px 0;">No available vouchers in your wallet.</p>';
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    // I-update ang label sa checkout button
+    updateCheckoutVoucherLabel();
+}
+
+function updateCheckoutVoucherLabel() {
+    const label = document.getElementById('checkoutVoucherLabel');
+    if (!label) return;
+    if (activeCouponId && COUPON_DATA[activeCouponId]) {
+        label.innerHTML = `<span style="color: var(--primary-orange);">${COUPON_DATA[activeCouponId].name}</span>`;
+    } else {
+        label.innerHTML = "Apply a Voucher";
+    }
 }
 
 function applyCoupon(couponId) {
@@ -383,12 +438,20 @@ function applyCoupon(couponId) {
         activeDiscount = 0;
         activeDiscountType = 'percent';
         activeCouponId = '';
+        if(couponId === "0") showToast('Voucher removed.', 'info'); 
     } else {
         const coupon = COUPON_DATA[couponId];
+        let currentSubtotal = orders.reduce((sum, item) => sum + item.subtotal, 0);
+        
+        if (currentSubtotal < coupon.minSpend) {
+            showToast(`Minimum spend of ${formatPrice(coupon.minSpend)} required!`, 'error');
+            return; 
+        }
+
         activeDiscount = coupon.value;
         activeDiscountType = coupon.type || 'percent';
         activeCouponId = couponId;
-        showToast(`${coupon.name} applied!`, 'info');
+        showToast(`${coupon.name} applied!`, 'success');
     }
 
     localStorage.setItem('foodhub_active_discount', activeDiscount);
@@ -396,11 +459,58 @@ function applyCoupon(couponId) {
     localStorage.setItem('foodhub_active_coupon_id', activeCouponId);
     
     updateStats();
+    renderCouponDropdown(); // Re-render para lumabas yung check icon sa napili
     
     const modal = document.getElementById('checkoutModal');
     if (modal && modal.style.display === 'flex') {
         renderCheckoutTotals();
     }
+    
+    // Isara agad ang voucher modal kapag nakapili na
+    const vModal = document.getElementById('voucherSelectionModal');
+    if (vModal) vModal.style.display = 'none';
+}
+
+function applyManualCoupon() {
+    const input = document.getElementById('manualPromoInput');
+    if (!input) return;
+    
+    const code = input.value.trim().toUpperCase();
+    if (!code) {
+        showToast('Please enter a promo code.', 'error');
+        return;
+    }
+
+    // 1. I-check kung nag-e-exist yung promo code
+    if (!COUPON_DATA[code]) {
+        showToast('Invalid promo code.', 'error');
+        return;
+    }
+
+    // 2. I-check kung NAGAMIT NA (ito yung request mo!)
+    const cv = claimedCoupons[code];
+    const isUsed = cv && typeof cv === 'object' && cv.used;
+    if (isUsed) {
+        showToast('This promo code has already been used.', 'error');
+        return;
+    }
+    
+    // 3. I-check ang Oras / Araw (kung para lang ba sa weekend/midnight)
+    const check = isVoucherTimeValid(code);
+    if (!check.valid) {
+        showToast(check.msg, 'error');
+        return;
+    }
+
+    // 4. Kung di pa niya na-claim, i-auto claim natin at idagdag sa wallet niya
+    if (!cv || cv !== true || !cv.claimed) {
+        claimedCoupons[code] = { claimed: true, used: false };
+        localStorage.setItem('foodhub_wallet', JSON.stringify(claimedCoupons));
+    }
+
+    // 5. I-apply ang voucher! (Kasama na rito ang minimum spend check na nasa applyCoupon function)
+    applyCoupon(code);
+    input.value = ''; // i-clear ang text box
 }
 
 function renderCheckoutTotals() {
@@ -552,6 +662,7 @@ function openCheckout() {
     modal.style.display = 'flex';
 }
 
+// Hanapin at palitan ang buong placeOrder() function:
 function placeOrder() {
     const nameEl = document.getElementById('custName');
     const addrEl = document.getElementById('custAddress');
@@ -563,46 +674,73 @@ function placeOrder() {
     const phone = phoneEl ? phoneEl.value.trim() : '';
     const paymentMethod = paymentEl ? paymentEl.value : ''; 
 
-    // 1. Check kung may laman ang text fields
+    // Validation
     if (name === '' || address === '' || phone === '') {
         showToast("Please fill in all delivery details.", "error");
         return;
     }
-    
-    // 2. Check kung valid ang phone number length
     if (phone.length < 10) {
         showToast("Validation Error: Enter a valid phone number.", "error");
         return;
     }
-
-    // 3. Check kung nakapili ng payment method
     if (paymentMethod === '') {
         showToast("Please select a Payment Method.", "error");
         return;
     }
 
-    // ==========================================
-    // DITO BANDA YUNG STEP 4 (Dynamic Success Message)
-    // ==========================================
-    let successMsg = `Order confirmed for ${name}! 🚀`;
-    if (paymentMethod === 'gcash' || paymentMethod === 'paypay' || paymentMethod === 'kakaopay') {
-        successMsg = `Redirecting to e-Wallet... Order secured! 🚀`;
-    } else if (paymentMethod === 'card') {
-        successMsg = `Card verified! Order confirmed for ${name}. 🚀`;
-    } else if (paymentMethod === 'paypal' || paymentMethod === 'applepay') {
-         successMsg = `Payment successful! Order confirmed for ${name}. 🚀`;
-    }
+    // --- COMPUTATION PARA SA RECEIPT ---
+    let subtotal = orders.reduce((sum, item) => sum + item.subtotal, 0);
+    let deliveryFee = (subtotal >= 1000 || activeCouponId === 'FREESHIP') ? 0 : 50.00;
+    let discountAmount = activeDiscountType === 'flat' ? Math.min(activeDiscount, subtotal) : subtotal * (activeDiscount / 100);
+    let finalTotal = (subtotal - discountAmount) + deliveryFee;
 
-    // Show Success Alert
-    showToast(successMsg, "success");
+    // --- SAVE ORDER TO DATABASE (Local Storage) ---
+    // --- SAVE ORDER TO DATABASE (Local Storage) ---
+    const orderId = 'MUNCH-' + Math.floor(100000 + Math.random() * 900000); // Generate random Order ID
+    
+    const newOrderData = {
+        orderId: orderId,
+        date: new Date().toISOString(),
+        customer: { name, address, phone },
+        items: [...orders], // Copy of current cart
+        subtotal: subtotal,
+        discount: discountAmount,
+        deliveryFee: deliveryFee,
+        total: finalTotal,
+        paymentMethod: paymentMethod,
+        status: 'Preparing', // <-- Pansinin: Nilagyan ko ng comma dito
+        currency: currentCurrency // <--- ITO YUNG MAGIC WORD NA IDINAGDAG NATIN
+    };
+    // 1. Save as Active Order (para sa track.html)
+    localStorage.setItem('munch_active_order', JSON.stringify(newOrderData));
 
-    // Mark the used coupon
+    // 2. Save to Past Orders History
+    let orderHistory = JSON.parse(localStorage.getItem('munch_order_history')) || [];
+    orderHistory.push(newOrderData);
+    localStorage.setItem('munch_order_history', JSON.stringify(orderHistory));
+
+    // --- POPULATE AND SHOW RECEIPT MODAL ---
+    document.getElementById('receiptOrderId').textContent = orderId;
+    document.getElementById('receiptTotalAmount').textContent = formatPrice(finalTotal);
+    
+    const receiptList = document.getElementById('receiptItemsList');
+    receiptList.innerHTML = '';
+    orders.forEach(item => {
+        receiptList.innerHTML += `
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; color: var(--text-dark);">
+                <span style="font-weight: 600;">${item.quantity}x ${item.foodName}</span>
+                <span>${formatPrice(item.subtotal)}</span>
+            </div>
+        `;
+    });
+
+    // Mark voucher as used
     if (activeCouponId && claimedCoupons[activeCouponId]) {
         claimedCoupons[activeCouponId] = { claimed: true, used: true };
         localStorage.setItem('foodhub_wallet', JSON.stringify(claimedCoupons));
     }
 
-    // Clear the cart
+    // Clear Cart
     orders = [];
     activeDiscount = 0;
     activeDiscountType = 'percent';
@@ -612,16 +750,21 @@ function placeOrder() {
     localStorage.setItem('foodhub_active_discount_type', 'percent');
     localStorage.setItem('foodhub_active_coupon_id', '');
 
-    // Reset UI
+    // Reset UI & Show Receipt
     renderTable();
     updateStats();
-    closeModal();
-
+    
+    // Itago ang checkout modal at ilabas ang receipt modal
+    document.getElementById('checkoutModal').style.display = 'none';
+    document.getElementById('receiptModal').style.display = 'flex';
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    
+    // Clear inputs
     if (nameEl) nameEl.value = '';
     if (addrEl) addrEl.value = '';
     if (phoneEl) phoneEl.value = '';
-    if (paymentEl) paymentEl.value = ''; // Reset payment dropdown
-    renderCouponDropdown();
+    if (paymentEl) paymentEl.value = '';
 }
 
 
@@ -703,32 +846,118 @@ document.addEventListener('DOMContentLoaded', () => {
         }, { threshold: 0.15 });
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 
-        document.querySelectorAll('.claim-btn').forEach(btn => {
+       document.querySelectorAll('.claim-btn').forEach(btn => {
             const id = btn.getAttribute('data-id');
             const code = btn.getAttribute('data-code');
             const key = id || code;
-            if (key && claimedCoupons[key]) {
+            
+            // Check kung claimed o kaya ay used na
+            const cv = claimedCoupons[key];
+            const isClaimedOrUsed = cv === true || (cv && cv.claimed);
+
+            if (key && isClaimedOrUsed) {
+                // Idinagdag ang claimed-btn class para gumana yung CSS natin!
+                btn.classList.add('claimed-btn'); 
+                
                 btn.innerHTML = '<i data-lucide="check" style="width: 18px; display: inline-block; vertical-align: middle; margin-right: 5px;"></i> Claimed';
                 btn.style.background = '#27AE60';
                 btn.style.color = 'white';
                 btn.style.border = 'none';
                 btn.disabled = true;
+                
+                // Kailangan tawagin ulit ito para ma-drawing yung check icon
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             }
         });
 
+       // ==========================================
+        // SMART UNIFIED FILTER (Search + Categories)
+        // ==========================================
         const filterBtns = document.querySelectorAll('.filter-btn');
         const foodCards = document.querySelectorAll('.food-card');
-        filterBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                filterBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                const filterValue = btn.getAttribute('data-filter');
-                foodCards.forEach(card => {
-                    const itemCategories = card.getAttribute('data-category') || "";
-                    card.style.display = (filterValue === 'all' || itemCategories.includes(filterValue)) ? 'block' : 'none';
+        const searchInput = document.getElementById('foodSearchInput');
+        const noResultsMsg = document.getElementById('noResultsMessage');
+
+        // Main filtering function
+        function applyFilters() {
+            const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            const activeBtn = document.querySelector('.filter-btn.active');
+            const activeFilter = activeBtn ? activeBtn.getAttribute('data-filter') : 'all';
+            
+            let visibleCount = 0;
+
+            foodCards.forEach(card => {
+                // 1. Check Search Input
+                const titleElement = card.querySelector('h4');
+                const foodName = titleElement ? titleElement.textContent.toLowerCase() : '';
+                const matchesSearch = foodName.includes(searchTerm);
+
+                // 2. Check Category Filter
+                const itemCategories = card.getAttribute('data-category') || "";
+                const matchesCategory = (activeFilter === 'all' || itemCategories.includes(activeFilter));
+
+                // 3. Show card ONLY if it matches BOTH
+                if (matchesSearch && matchesCategory) {
+                    card.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+            
+
+            // 4. Show "Empty Message" kung walang nakapasa sa filter
+            if (noResultsMsg) {
+                noResultsMsg.style.display = visibleCount === 0 ? 'block' : 'none';
+                // Re-render icon kung sakaling lumabas ang empty message
+                if (visibleCount === 0 && typeof lucide !== 'undefined') {
+                    lucide.createIcons(); 
+                }
+            }
+
+            // ==========================================
+        // AUTO-SCROLL ON ENTER KEY (Search Bar)
+        // ==========================================
+        if (searchInput) {
+            searchInput.addEventListener('keydown', function(e) {
+                // I-check kung "Enter" key ang pinindot
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // Iwasan ang page reload
+                    
+                    // Hanapin yung food grid container natin
+                    const gridTarget = document.querySelector('.category-header'); 
+                    
+                    if (gridTarget) {
+                        // Mag-scroll pababa nang dahan-dahan (smooth)
+                        gridTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        
+                        // Optional: Tanggalin yung focus sa search bar para hindi na naka-keyboard sa mobile
+                        searchInput.blur();
+                    }
+                }
+            });
+        }
+        }
+
+        
+
+        // Trigger filter kapag pumindot ng category button
+        if (filterBtns.length > 0) {
+            filterBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Tanggalin ang active class sa lahat, tapos ilagay sa kinlick
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    // I-apply ang filter rules
+                    applyFilters();
                 });
             });
-        });
+        }
+
+        // Trigger filter habang nagta-type sa search bar
+        if (searchInput) {
+            searchInput.addEventListener('input', applyFilters);
+        }
 
         document.querySelectorAll('.faq-header').forEach(header => {
             header.addEventListener('click', function() {
@@ -795,8 +1024,23 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const countEl = document.getElementById('claimedCount');
         if (countEl) {
-            const count = Object.values(claimedCoupons).filter(v => v === true || (v && v.claimed)).length;
-            countEl.innerText = `${count} Voucher${count > 1 ? 's' : ''} Claimed`;
+            const claimedCouponsKeys = Object.keys(claimedCoupons).filter(k => {
+                const v = claimedCoupons[k];
+                return v === true || (v && v.claimed);
+            });
+            const usedCount = claimedCouponsKeys.filter(k => {
+                const v = claimedCoupons[k];
+                return v && typeof v === 'object' && v.used;
+            }).length;
+            const activeCount = claimedCouponsKeys.length - usedCount;
+            
+            if (activeCount > 0) {
+                countEl.innerText = `${activeCount} Active • ${usedCount} Used`;
+            } else if (usedCount > 0) {
+                countEl.innerText = `${usedCount} Used`;
+            } else {
+                countEl.innerText = '0 Vouchers Claimed';
+            }
         }
     } catch (err) {
         console.warn("Munch UI Init warning: Some elements might not exist on this page.", err);
@@ -859,103 +1103,76 @@ function updateCheckoutRegion() {
 // Function para i-check kung valid ang time/date ng voucher
 function isVoucherTimeValid(code) {
     const now = new Date();
-    const hour = now.getHours(); // 0-23
-    const day = now.getDate();   // 1-31
+    const hour = now.getHours(); 
+    const day = now.getDate();   
+    const dayOfWeek = now.getDay(); // 0 = Sun, 6 = Sat
 
-    // LOGIC: Midnight Cravings (10 PM - 2 AM)
     if (code === 'MIDNIGHT15') {
-        if (hour >= 22 || hour < 2) {
-            return { valid: true };
-        } else {
-            return { valid: false, msg: "Midnight Cravings is only claimable between 10 PM and 2 AM!" };
-        }
+        if (hour >= 22 || hour < 2) return { valid: true };
+        else return { valid: false, msg: "Midnight Cravings is only claimable between 10 PM and 2 AM!" };
     }
 
-    // LOGIC: Payday Treat (Every 15th and 30th)
     if (code === 'PAYDAY100') {
-        if (day === 15 || day === 30) {
-            return { valid: true };
-        } else {
-            return { valid: false, msg: "Payday Treat is only claimable every 15th and 30th of the month!" };
-        }
+        if (day === 15 || day === 30) return { valid: true };
+        else return { valid: false, msg: "Payday Treat is only claimable every 15th and 30th of the month!" };
     }
 
-    // LOGIC: Lent Season Promo (March 31 - April 6 only)
     if (code === 'LENT40') {
-        const month = now.getMonth(); // 0=Jan, 2=Mar, 3=Apr
+        const month = now.getMonth(); 
         const isLentPeriod = (month === 2 && day >= 31) || (month === 3 && day <= 6);
-        if (isLentPeriod) {
-            return { valid: true };
-        } else {
-            return { valid: false, msg: "Seasonal Feast is only available from March 31 to April 6!" };
-        }
+        if (isLentPeriod) return { valid: true };
+        else return { valid: false, msg: "Mahal na Araw Promo is only available from March 31 to April 6!" };
     }
 
-    // Default: Claimable ang iba
+    // BAGONG LOGIC PARA SA WEEKEND CRAZE
+    if (code === 'WEEKEND10') {
+        if (dayOfWeek === 0 || dayOfWeek === 6) return { valid: true };
+        else return { valid: false, msg: "Weekend Craze is only claimable on Saturdays and Sundays!" };
+    }
+
     return { valid: true };
 }
 
 function renderPromos() {
-    const voucherGrid = document.getElementById('voucherGrid');
-    if (!voucherGrid) return;
-    voucherGrid.innerHTML = '';
+    const claimableGrid = document.getElementById('claimableGrid');
+    const unclaimableGrid = document.getElementById('unclaimableGrid');
+    const unavailableContainer = document.getElementById('unavailableContainer');
 
-    // Kumuha ng system time ngayon
+    if (!claimableGrid || !unclaimableGrid) return;
+    
+    claimableGrid.innerHTML = '';
+    unclaimableGrid.innerHTML = '';
+
     const now = new Date();
-    const currentHour = now.getHours(); // 0-23
-    const currentDay = now.getDate();   // 1-31
+    const currentHour = now.getHours();
+    const currentDay = now.getDate();   
+    const currentMonth = now.getMonth(); 
+    const currentDayOfWeek = now.getDay(); 
+
+    let hasUnclaimable = false;
 
     Object.keys(COUPON_DATA).forEach(key => {
         const coupon = COUPON_DATA[key];
         const _cv = claimedCoupons[key];
         const isClaimed = _cv === true || (_cv && _cv.claimed === true);
         const isUsed = _cv && typeof _cv === 'object' && _cv.used === true;
-        
-        // Skip rendering Lend season and other unclaimable dynamic types
-        if (coupon.type === 'season' || coupon.type === 'shipping') return;
 
         let isDisabled = false;
         let buttonText = isClaimed ? 'Claimed' : 'Claim Now';
         let buttonClass = 'claim-btn';
 
-        // ==========================================
-        // DITO BANDA ANG TIMING LOGIC
-        // ==========================================
-        
-        // LOGIC: Midnight Cravings (Valid only 10 PM - 2 AM)
-        if (key === 'MIDNIGHT15') {
-            const isValidTime = (currentHour >= 22 || currentHour < 2);
-            if (!isValidTime) {
-                isDisabled = true;
-                buttonText = "Unclaimable"; // Mas specific na text
-            }
-        }
+        // Check if Time/Date makes it disabled
+        if (key === 'MIDNIGHT15' && !(currentHour >= 22 || currentHour < 2)) isDisabled = true;
+        if (key === 'PAYDAY100' && (currentDay !== 15 && currentDay !== 30)) isDisabled = true;
+        if (key === 'LENT40' && !((currentMonth === 2 && currentDay >= 31) || (currentMonth === 3 && currentDay <= 6))) isDisabled = true;
+        if (key === 'WEEKEND10' && (currentDayOfWeek !== 0 && currentDayOfWeek !== 6)) isDisabled = true;
 
-        // LOGIC: Payday Treat (Valid only 15th and 30th)
-        if (key === 'PAYDAY100') {
-            const isValidDate = (currentDay === 15 || currentDay === 30);
-            if (!isValidDate) {
-                isDisabled = true;
-                buttonText = "Unclaimable";
-            }
-        }
+        if (isDisabled) buttonText = "Unclaimable";
 
-        // LOGIC: Lent Season Promo (Valid only March 31 - April 6)
-        if (key === 'LENT40') {
-            const currentMonth = now.getMonth(); // 0=Jan, 2=Mar, 3=Apr
-            const isLentPeriod = (currentMonth === 2 && currentDay >= 31) || (currentMonth === 3 && currentDay <= 6);
-            if (!isLentPeriod) {
-                isDisabled = true;
-                buttonText = "Unclaimable";
-            }
-        }
-
-        // Setup common dynamic data
         const idAttr = key.match(/^\d+$/) ? `data-id="${key}"` : '';
         const codeAttr = key.match(/^\d+$/) ? '' : `data-code="${key}"`;
         const titleAttr = key.match(/^\d+$/) ? '' : `data-title="${coupon.name}"`; 
         
-        // Setup Icon and Visual Class base sa categories
         let iconHtml = '<i data-lucide="tag"></i>'; 
         let cardClass = 'promo-card';
         if (key === 'GOLDEN20') { iconHtml = '<i data-lucide="user-plus"></i>'; cardClass += ' promo-senior'; }
@@ -964,11 +1181,11 @@ function renderPromos() {
         if (key === 'MIDNIGHT15') { iconHtml = '<i data-lucide="moon"></i>'; cardClass += ' promo-midnight'; }
         if (key === 'PAYDAY100') { iconHtml = '<i data-lucide="banknote"></i>'; cardClass += ' promo-payday'; }
         if (key === 'BARKADA200') { iconHtml = '<i data-lucide="users"></i>'; cardClass += ' promo-barkada'; }
-        if (key === 'LENT40') { iconHtml = '<i data-lucide="utensils-crossed"></i>'; cardClass += ' promo-lent'; }
+        if (key === 'LENT40') { iconHtml = '<i data-lucide="sun"></i>'; cardClass += ' promo-lent'; }
+        if (key === 'WEEKEND10') { iconHtml = '<i data-lucide="calendar-heart"></i>'; cardClass += ' promo-payday'; }
+        if (key === 'WELCOME5') { iconHtml = '<i data-lucide="party-popper"></i>'; cardClass += ' promo-welcome'; }
+        if (key === 'FREESHIP') { iconHtml = '<i data-lucide="truck"></i>'; cardClass += ' promo-freeship'; }
 
-        // ==========================================
-        // I-apply ang GRAYISH looks kung disabled
-        // ==========================================
         if (isUsed) {
             cardClass += ' disabled-card';
             buttonClass += ' btn-disabled';
@@ -980,32 +1197,46 @@ function renderPromos() {
             buttonClass += ' claimed-btn';
         }
 
-        // Use check icon (white) for claimed, otherwise use the card's own icon
         const buttonIconHtml = (isClaimed || isUsed)
             ? '<i data-lucide="check" style="width:18px;height:18px;stroke:white;color:white;"></i>'
             : iconHtml;
 
-        const promoCard = document.createElement('div');
-        promoCard.className = cardClass;
-        promoCard.innerHTML = `
-            <div class="promo-content">
-                <div class="promo-value">${coupon.type === 'flat' ? formatPrice(coupon.value) : coupon.value + '% OFF'}</div>
-                <h3>${coupon.name.split(' (')[0]}</h3>
-                <p>Enjoy ${coupon.type === 'flat' ? formatPrice(coupon.value) : coupon.value + '%'} discount on your next ordering!</p>
-                <button class="${buttonClass}" ${isDisabled || isClaimed || isUsed ? 'disabled' : ''} ${idAttr} ${codeAttr} ${titleAttr}>
-                    ${buttonIconHtml} ${buttonText}
-                </button>
+        let displayValue = "";
+        if (coupon.type === 'flat') displayValue = formatPrice(coupon.value) + " OFF";
+        else if (coupon.type === 'percent') displayValue = coupon.value + "% OFF";
+        else if (coupon.type === 'shipping') displayValue = "FREE SHIPPING";
+
+        let displayDesc = coupon.type === 'shipping' ? 'No delivery fee!' : `Enjoy ${coupon.type === 'flat' ? formatPrice(coupon.value) : coupon.value + '%'} discount on your next ordering!`;
+
+        let promoHtml = `
+            <div class="${cardClass}">
+                <div class="promo-content">
+                    <div class="promo-value">${displayValue}</div>
+                    <h3>${coupon.name.split(' (')[0]}</h3>
+                    <p>${displayDesc}</p>
+                    <button class="${buttonClass}" ${isDisabled || isClaimed || isUsed ? 'disabled' : ''} ${idAttr} ${codeAttr} ${titleAttr}>
+                        ${buttonIconHtml} ${buttonText}
+                    </button>
+                </div>
+                <div class="promo-icon-bg">${iconHtml}</div>
             </div>
-            <div class="promo-icon-bg">${iconHtml}</div>
         `;
-        voucherGrid.appendChild(promoCard);
+
+        if (isDisabled || isUsed) {
+            unclaimableGrid.innerHTML += promoHtml;
+            hasUnclaimable = true;
+        } else {
+            claimableGrid.innerHTML += promoHtml;
+        }
     });
     
-    // Re-initialize Lucide Icons after dynamic rendering
+    if (unavailableContainer) {
+        unavailableContainer.style.display = hasUnclaimable ? 'block' : 'none';
+    }
+
     lucide.createIcons();
     addClaimListeners(); 
 }
-
 // Function para gumana ang Claim Buttons kahit bagong gawa ang mga ito
 function addClaimListeners() {
     document.querySelectorAll('.claim-btn').forEach(btn => {
@@ -1040,13 +1271,488 @@ function addClaimListeners() {
         btn.dataset.listenerAdded = "true";
     });
 }
-   renderCouponDropdown();
-        renderTable();
-        updateStats();
-        updateAllVisiblePrices(); // DITO NATIN C-NALL YUNG INITIAL CURRENCY LOAD
-    
-        // IDAGDAG MO ITONG LINE NA ITO:
-        renderPromos();
 
-// Siguraduhin na tinatawag ito sa dulo ng renderPromos()
-// (Nakalagay na ito sa script mo kanina, make sure lang na nandito yung function definition)
+// ==========================================
+        // SEARCH BAR LOGIC
+        // ==========================================
+        const searchInput = document.getElementById('foodSearchInput');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase().trim();
+                const foodCards = document.querySelectorAll('.food-card');
+                const filterBtns = document.querySelectorAll('.filter-btn');
+                
+                // Kapag nag-type si user, i-reset natin ang category tab sa "All"
+                // Para hindi siya magtaka kung bakit walang lumalabas pag nasa "Drinks" tab siya pero "Burger" ang hinahanap
+                if (searchTerm.length > 0) {
+                    filterBtns.forEach(b => b.classList.remove('active'));
+                    const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+                    if (allBtn) allBtn.classList.add('active');
+                }
+
+                // I-check bawat food card kung may match sa pangalan
+                foodCards.forEach(card => {
+                    const titleElement = card.querySelector('h4');
+                    const foodName = titleElement ? titleElement.textContent.toLowerCase() : '';
+                    
+                    if (foodName.includes(searchTerm)) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        function openVoucherSelectionModal() {
+    renderCouponDropdown();
+    const modal = document.getElementById('voucherSelectionModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+}
+
+window.viewOrderDetails = function(orderId, currentStatus) {
+    const historyData = JSON.parse(localStorage.getItem('munch_order_history')) || [];
+    const order = historyData.find(o => o.orderId === orderId);
+    
+    if (!order) return;
+
+    // 1. Populate Basic Info
+    document.getElementById('modalOrderId').textContent = order.orderId;
+    document.getElementById('modalOrderStatus').textContent = currentStatus;
+    const dateObj = new Date(order.date);
+    document.getElementById('modalOrderDate').textContent = dateObj.toLocaleString();
+
+   // --- TIMELINE LOGIC (WITH CANCELLED STATE) ---
+const s2 = document.getElementById('m-step-2');
+const s3 = document.getElementById('m-step-3');
+const s4 = document.getElementById('m-step-4');
+
+// I-reset muna lahat sa default bago i-apply ang status
+[s2, s3, s4].forEach(s => {
+    s.classList.remove('active', 'cancelled');
+    s.style.display = 'flex';
+});
+s2.querySelector('.step-icon').innerHTML = '<i data-lucide="chef-hat"></i>';
+s2.querySelector('h4').textContent = 'Cooking';
+
+if (currentStatus === 'Cancelled') {
+    // Kapag cancelled: Step 2 magiging Red X, pero lahat ng steps ay makikita pa rin
+    s2.classList.add('cancelled');
+    s2.querySelector('.step-icon').innerHTML = '<i data-lucide="x"></i>';
+    s2.querySelector('h4').textContent = 'Cancelled';
+    // IMPORTANT: Don't hide s3 at s4, para makita pa rin ang lahat ng steps
+    // s3 at s4 ay manatiling visible pero hindi active/highlighted
+    document.getElementById('modalOrderStatus').style.color = '#E74C3C';
+} else {
+    // Kapag Completed: Lahat magiging Solid Orange (Active)
+    s2.classList.add('active');
+    s3.classList.add('active');
+    s4.classList.add('active');
+    document.getElementById('modalOrderStatus').style.color = 'var(--primary-orange)';
+}
+// --- END TIMELINE LOGIC ---
+
+    // 3. Render Items
+    const itemsList = document.getElementById('modalOrderItems');
+    itemsList.innerHTML = order.items.map(item => `
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px;">
+            <span><span style="font-weight:700;">${item.quantity}x</span> ${item.foodName}</span>
+            <span style="font-weight:600;">${formatHistoryPrice(item.subtotal, order.currency)}</span>
+        </div>
+    `).join('');
+
+    // 4. Update Totals
+    document.getElementById('modalOrderSubtotal').textContent = formatHistoryPrice(order.subtotal, order.currency);
+    document.getElementById('modalOrderDelivery').textContent = order.deliveryFee === 0 ? "FREE" : formatHistoryPrice(order.deliveryFee, order.currency);
+    document.getElementById('modalOrderTotal').textContent = formatHistoryPrice(order.total, order.currency);
+    
+    // Customer Info
+    document.getElementById('modalCustName').textContent = order.customer.name;
+    document.getElementById('modalCustPhone').textContent = order.customer.phone;
+    document.getElementById('modalCustAddress').textContent = order.customer.address;
+
+    document.getElementById('orderDetailsModal').style.display = 'flex';
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+// Wag kalimutang i-register 'to sa window object sa taas ng script mo para mabasa ng HTML
+// ILAGAY ITO SA PINAKABABA NG script.js
+window.applyManualCoupon = applyManualCoupon;
+window.openVoucherSelectionModal = openVoucherSelectionModal;
+
+// Siguraduhin na tinatawag ang initial load functions
+document.addEventListener('DOMContentLoaded', () => {
+    renderCouponDropdown();
+    renderTable();
+    updateStats();
+    updateAllVisiblePrices();
+    if (typeof renderPromos === 'function') renderPromos();
+});
+
+let _addons_item = {};
+
+function openAddonsModal(name, category, price, prepTime, rating, imgSrc) {
+    _addons_item = { name, category, price, prepTime, rating };
+
+    const addonsContainer = document.getElementById('addonsListContainer');
+    let addonsHTML = '';
+
+    // I-convert sa lowercase ang category para mas madaling i-check
+    const cat = category.toLowerCase();
+
+    // Kapag Mains o Popular (kadalasan meals ito)
+    if (cat.includes('mains') || cat.includes('popular') || cat === 'meals') {
+        addonsHTML = `
+            <label class="addon-row">
+                <input type="checkbox" class="addon-check" value="25" data-label="Extra Rice"> 
+                <span class="addon-name">Extra Rice</span><span class="addon-price">+₱25</span>
+            </label>
+            <label class="addon-row">
+                <input type="checkbox" class="addon-check" value="30" data-label="Add Egg"> 
+                <span class="addon-name">Add Egg</span><span class="addon-price">+₱30</span>
+            </label>
+            <label class="addon-row">
+                <input type="checkbox" class="addon-check" value="50" data-label="Extra Meat"> 
+                <span class="addon-name">Extra Meat</span><span class="addon-price">+₱50</span>
+            </label>
+        `;
+    } 
+    // Kapag Sides (tulad ng Fries, Wings)
+    else if (cat.includes('sides')) {
+        addonsHTML = `
+            <label class="addon-row">
+                <input type="checkbox" class="addon-check" value="20" data-label="Cheese Dip"> 
+                <span class="addon-name">Cheese Dip</span><span class="addon-price">+₱20</span>
+            </label>
+            <label class="addon-row">
+                <input type="checkbox" class="addon-check" value="25" data-label="Garlic Mayo"> 
+                <span class="addon-name">Garlic Mayo</span><span class="addon-price">+₱25</span>
+            </label>
+        `;
+    } 
+    // Kapag Desserts (tulad ng Churros, Cake)
+    else if (cat.includes('desserts')) {
+        addonsHTML = `
+            <label class="addon-row">
+                <input type="checkbox" class="addon-check" value="30" data-label="Extra Chocolate Syrup"> 
+                <span class="addon-name">Extra Chocolate Syrup</span><span class="addon-price">+₱30</span>
+            </label>
+            <label class="addon-row">
+                <input type="checkbox" class="addon-check" value="50" data-label="Add 1 Scoop Ice Cream"> 
+                <span class="addon-name">Add 1 Scoop Ice Cream</span><span class="addon-price">+₱50</span>
+            </label>
+        `;
+    } 
+    // Kapag Drinks (tulad ng Coke, Coffee)
+        else if (cat.includes('drinks')) {
+    addonsHTML = `
+        <label class="addon-row">
+            <input type="checkbox" class="addon-check" value="0" data-label="Extra Ice"> 
+            <span class="addon-name">Extra Ice</span><span class="addon-price" style="color: var(--primary-orange);">Free</span>
+        </label>
+        <label class="addon-row">
+            <input type="checkbox" class="addon-check" value="30" data-label="Upsize to Large"> 
+            <span class="addon-name">Upsize to Large</span><span class="addon-price">+₱30</span>
+        </label>
+    `;
+}
+    // Fallback kung sakaling walang tamang category
+    else {
+        addonsHTML = `<p style="font-size: 14px; color: var(--text-light); text-align: center;">No add-ons available for this item.</p>`;
+    }
+
+    // Ipasok ang na-generate na HTML sa container
+    addonsContainer.innerHTML = addonsHTML;
+
+    // I-re-attach yung event listener sa mga bagong checkboxes
+    document.querySelectorAll('.addon-check').forEach(c => {
+        c.addEventListener('change', updateAddonsTotal);
+    });
+
+    // Update Modal Details
+    document.getElementById('addonsModalImg').src = imgSrc;
+    document.getElementById('addonsModalName').textContent = name;
+    document.getElementById('addonsModalPrice').textContent = '₱' + price.toFixed(2);
+    document.getElementById('addonsQty').textContent = '1';
+
+    // Update logic and display
+    updateAddonsTotal();
+    document.getElementById('addonsModal').style.display = 'flex';
+    lucide.createIcons();
+}
+
+function closeAddonsModal() {
+    document.getElementById('addonsModal').style.display = 'none';
+}
+
+function changeAddonQty(delta) {
+    const el = document.getElementById('addonsQty');
+    let q = parseInt(el.textContent) + delta;
+    if (q < 1) q = 1;
+    if (q > 99) q = 99;
+    el.textContent = q;
+    updateAddonsTotal();
+}
+
+function updateAddonsTotal() {
+    const qty = parseInt(document.getElementById('addonsQty').textContent);
+    let addonsTotal = 0;
+    document.querySelectorAll('.addon-check:checked').forEach(c => addonsTotal += parseFloat(c.value));
+    const total = (_addons_item.price + addonsTotal) * qty;
+    document.getElementById('addonsConfirmLabel').textContent = `Add to Cart — ₱${total.toFixed(2)}`;
+}
+
+document.querySelectorAll('.addon-check').forEach(c => c.addEventListener('change', updateAddonsTotal));
+
+function confirmAddons() {
+    const qty = parseInt(document.getElementById('addonsQty').textContent);
+    let addonsTotal = 0;
+    let addonLabels = [];
+    document.querySelectorAll('.addon-check:checked').forEach(c => {
+        addonsTotal += parseFloat(c.value);
+        addonLabels.push(c.dataset.label);
+    });
+    const finalPrice = _addons_item.price + addonsTotal;
+    addOrder(_addons_item.name, _addons_item.category, finalPrice, qty, _addons_item.prepTime, _addons_item.rating, addonLabels);
+    closeAddonsModal();
+}
+
+// ── Notifications (bell) ─────────────────────────────────────────────
+
+// 1. Gawing dynamic at naka-connect sa localStorage ang notifications
+let _notifications = JSON.parse(localStorage.getItem('munch_notifs')) || [
+    { id: 1, icon: 'party-popper', color: '#27AE60', bg: '#EAFAF1', title: 'Welcome to munch.!', body: 'Check out our promos and start ordering!', time: 'Just now', read: false }
+];
+
+function saveNotifs() {
+    localStorage.setItem('munch_notifs', JSON.stringify(_notifications));
+}
+
+// 2. Function para mag-add ng bagong notification nang madali
+function addNotification(title, body, icon = 'bell', color = '#FF6B35', bg = '#FFF4E5') {
+    const newNotif = {
+        id: Date.now(),
+        icon: icon,
+        color: color,
+        bg: bg,
+        title: title,
+        body: body,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+        read: false
+    };
+    
+    _notifications.unshift(newNotif); // Ilagay sa pinakataas
+    if (_notifications.length > 15) _notifications.pop(); // Limitahan sa 15 notifs lang para iwas lag
+    
+    saveNotifs();
+    updateNotifBadge();
+    
+    // I-update agad ang list kung nakabukas ang panel
+    const panel = document.getElementById('notifPanel');
+    if (panel && window.getComputedStyle(panel).display === 'block') {
+        renderNotifs();
+    }
+}
+
+// Helper function para i-check at i-update yung red dot badge
+function updateNotifBadge() {
+    const unreadCount = _notifications.filter(n => !n.read).length;
+    const badge = document.getElementById('notifBadge');
+    if (badge) {
+        badge.style.display = unreadCount > 0 ? 'block' : 'none';
+    }
+}
+
+function toggleNotifPanel() {
+    const panel = document.getElementById('notifPanel');
+    if (!panel) return;
+
+    const isHidden = window.getComputedStyle(panel).display === 'none';
+    
+    if (isHidden) {
+        panel.style.display = 'block';
+        renderNotifs();
+        
+        // Mark as read pagkatapos ng 1.5 seconds at i-update ang UI
+        setTimeout(() => {
+            _notifications.forEach(n => n.read = true);
+            saveNotifs(); // I-save sa localStorage na nabasa na lahat
+            updateNotifBadge();
+            renderNotifs(); 
+        }, 1500);
+    } else {
+        panel.style.display = 'none';
+    }
+}
+
+function renderNotifs() {
+    const list = document.getElementById('notifList');
+    if (!list) return;
+    
+    if (_notifications.length === 0) {
+        list.innerHTML = `<div style="padding: 20px; text-align: center; color: #999; font-size: 13px;">No notifications yet.</div>`;
+        return;
+    }
+
+    list.innerHTML = _notifications.map(n => `
+        <div style="display:flex;gap:12px;padding:14px 18px;border-bottom:1px solid #F5F5F5;background:${n.read ? 'white' : '#FFFAF7'};transition:0.2s;cursor:pointer;" onmouseenter="this.style.background='#FFF4E5'" onmouseleave="this.style.background='${n.read ? 'white' : '#FFFAF7'}'">
+            <div style="width:38px;height:38px;border-radius:12px;background:${n.bg};display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i data-lucide="${n.icon}" style="width:18px;color:${n.color};"></i>
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">
+                    <span style="font-size:13px;font-weight:700;color:var(--text-dark);">${n.title}</span>
+                    ${!n.read ? '<span style="width:8px;height:8px;background:var(--primary-orange);border-radius:50%;flex-shrink:0;"></span>' : ''}
+                </div>
+                <p style="font-size:12px;color:var(--text-light);margin:0 0 4px;line-height:1.4;">${n.body}</p>
+                <span style="font-size:11px;color:#CCC;font-weight:500;">${n.time}</span>
+            </div>
+        </div>
+    `).join('');
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// Close notif panel kapag pumindot sa labas
+document.addEventListener('click', function(e) {
+    const panel = document.getElementById('notifPanel');
+    const bell = document.getElementById('notifBell');
+    if (panel && bell && !panel.contains(e.target) && !bell.contains(e.target)) {
+        panel.style.display = 'none';
+    }
+});
+
+// 3. GLOBAL REAL-TIME ORDER MONITOR (Ito ang magic sa lahat ng pages)
+function monitorOrderNotifications() {
+    const activeOrderJson = localStorage.getItem('munch_active_order');
+    if (!activeOrderJson) return; // Kung walang order, wag na mag-check
+
+    let order = JSON.parse(activeOrderJson);
+    const orderTimestamp = new Date(order.date).getTime();
+    const elapsedSecs = Math.floor((Date.now() - orderTimestamp) / 1000);
+
+    // I-track kung saang stage na tayo nag-notify para hindi mag-spam
+    if (typeof order.notifiedStage === 'undefined') order.notifiedStage = 0;
+
+    let currentStage = 0;
+    if (elapsedSecs >= 45) currentStage = 4; // Arrived
+    else if (elapsedSecs >= 30) currentStage = 3; // Out for Delivery
+    else if (elapsedSecs >= 15) currentStage = 2; // Preparing
+    else currentStage = 1; // Placed
+
+    // Kapag may bagong stage na narating, mag-push ng notification
+    if (currentStage > order.notifiedStage) {
+        
+        if (currentStage === 1 && order.notifiedStage < 1) {
+            addNotification('Order Received!', `We got your order ${order.orderId}.`, 'clipboard-check', '#FF6B35', '#FFF4E5');
+        }
+        if (currentStage === 2 && order.notifiedStage < 2) {
+            addNotification('Cooking Magic!', `The kitchen is now preparing your meal.`, 'chef-hat', '#F39C12', '#FEF9E7');
+        }
+        if (currentStage === 3 && order.notifiedStage < 3) {
+            addNotification('Out for Delivery!', `Rider is on the way with your food. Get ready!`, 'bike', '#3498DB', '#EBF5FB');
+        }
+        if (currentStage === 4 && order.notifiedStage < 4) {
+            addNotification('Order Arrived!', `Your food is here. Enjoy your munch!`, 'package', '#27AE60', '#EAFAF1');
+            
+            // Auto-trigger din yung browser toast alert
+            if (typeof showToast === 'function') {
+                showToast(`Your order ${order.orderId} has arrived!`, "success");
+            }
+        }
+
+        // I-save na na-notify na natin ang stage na 'to para hindi umulit
+        order.notifiedStage = currentStage;
+        localStorage.setItem('munch_active_order', JSON.stringify(order));
+    }
+}
+
+
+// Siguruhing accessible globally ang mga functions
+window.toggleDropdown = toggleDropdown;
+window.selectCurrency = selectCurrency;
+window.toggleNotifPanel = toggleNotifPanel;
+window.addNotification = addNotification;
+
+// --- INITIALIZATION ON PAGE LOAD ---
+document.addEventListener('DOMContentLoaded', () => {
+    renderCouponDropdown();
+    renderTable();
+    updateStats();
+    updateAllVisiblePrices(); 
+    if (typeof renderPromos === 'function') renderPromos();
+    
+    // I-check agad kung may unread notifications pagkakasimula
+    updateNotifBadge();
+    
+    // I-run yung monitor every 2 seconds para real-time sa lahat ng pages!
+    setInterval(monitorOrderNotifications, 2000);
+});
+
+// ==========================================
+// BUG FIXES: DROPDOWN & NOTIF CLICK ISSUES
+// ==========================================
+
+// 1. Inayos ang Notification Toggle
+window.toggleNotifPanel = function(event) {
+    // Pigilan ang click na umabot sa document
+    const e = event || window.event;
+    if (e) e.stopPropagation(); 
+
+    const panel = document.getElementById('notifPanel');
+    if (!panel) return;
+
+    const isHidden = window.getComputedStyle(panel).display === 'none';
+    
+    if (isHidden) {
+        panel.style.display = 'block';
+        if (typeof renderNotifs === 'function') renderNotifs();
+        
+        setTimeout(() => {
+            if (typeof _notifications !== 'undefined') {
+                _notifications.forEach(n => n.read = true);
+                if (typeof saveNotifs === 'function') saveNotifs();
+                if (typeof updateNotifBadge === 'function') updateNotifBadge();
+                renderNotifs(); 
+            }
+        }, 1500);
+    } else {
+        panel.style.display = 'none';
+    }
+};
+
+// 2. Inayos ang Currency Dropdown Toggle
+window.toggleDropdown = function(event) {
+    // Pigilan din ang click dito
+    const e = event || window.event;
+    if (e) e.stopPropagation();
+    
+    const options = document.getElementById('currencyOptions');
+    if (options) {
+        options.classList.toggle('show');
+    }
+};
+
+// 3. Pinagsama sa iisang Global Click Listener para malinis
+document.addEventListener('click', function(e) {
+    // Check para sa Notification Panel
+    const notifPanel = document.getElementById('notifPanel');
+    const notifBell = document.getElementById('notifBell');
+    if (notifPanel && notifPanel.style.display === 'block') {
+        if (!notifPanel.contains(e.target) && (!notifBell || !notifBell.contains(e.target))) {
+            notifPanel.style.display = 'none';
+        }
+    }
+
+    // Check para sa Currency Dropdown
+    const currOptions = document.getElementById('currencyOptions');
+    const currDropdown = document.querySelector('.custom-currency-dropdown');
+    if (currOptions && currOptions.classList.contains('show')) {
+        if (!currDropdown || !currDropdown.contains(e.target)) {
+            currOptions.classList.remove('show');
+        }
+    }
+});

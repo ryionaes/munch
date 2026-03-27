@@ -51,14 +51,34 @@
             </div>
         </div>
     </div>
-    <a href="developers.html" class="dev-info-icon" title="About Developers">
-        <i data-lucide="info" class="icon-20"></i>
-    </a>
+    <a href="history.html" class="dev-info-icon" title="Order History" style="background: #FFF4E5; color: #FF6B35;">
+                <i data-lucide="clock-4" class="icon-20"></i>
+            </a>
+        
+<div style="position:relative;" id="notifBell">
+    <button onclick="toggleNotifPanel()" title="Notifications" class="dev-info-icon" style="background:#FFF4E5;color:#FF6B35;border:none;cursor:pointer;position:relative;">
+        <i data-lucide="bell" class="icon-20"></i>
+        <span id="notifBadge" style="position:absolute;top:6px;right:6px;width:9px;height:9px;background:#E74C3C;border-radius:50%;border:2px solid white;"></span>
+    </button>
+    <!-- Notification Panel -->
+    <div id="notifPanel" style="display:none;position:absolute;top:calc(100% + 12px);right:0;width:320px;background:white;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.12);border:1px solid #F0F0F0;z-index:9999;overflow:hidden;">
+        <div style="padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F5F5F5;">
+            <span style="font-size:15px;font-weight:800;color:var(--text-dark);">Notifications</span>
+            <span style="font-size:12px;color:var(--primary-orange);font-weight:600;cursor:pointer;">Mark all read</span>
+        </div>
+        <div id="notifList" style="max-height:300px;overflow-y:auto;"></div>
+        <div style="padding:12px 18px;text-align:center;border-top:1px solid #F5F5F5;">
+            <span style="font-size:13px;color:var(--text-light);font-weight:500;">You're all caught up! 🎉</span>
+        </div>
+    </div>
 </div>
-    </nav>
+
+</div>
+
+</nav>
 
     <main class="main-content">
-        
+       
         <div class="page-header" style="text-align: center; padding: 60px 0 40px;">
             <div style="display: inline-flex; align-items: center; gap: 8px; background: var(--light-orange); color: var(--primary-orange); padding: 8px 18px; border-radius: 50px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;">
                 <i data-lucide="sparkles" class="icon-14"></i> Exclusive Rewards
@@ -82,121 +102,25 @@
             </div>
         </div>
         
-        <div class="voucher-grid" id="voucherGrid">
+       <div id="promoSectionsWrapper" style="width: 100%;">
             
-            <div class="promo-card promo-student">
-                <span class="promo-badge">Popular</span>
-                <div class="promo-content">
-                    <div class="promo-value">20% OFF</div>
-                    <h3>Student Pass</h3>
-                    <p>Unlock 20% off your entire meal. Just present your student ID upon checkout.</p>
-                    <button class="claim-btn" data-code="STUDENT20" data-title="Student Discount">
-                        <i data-lucide="ticket" class="icon-18"></i> Claim Now
-                    </button>
-                </div>
-                <div class="promo-icon-bg"><i data-lucide="graduation-cap"></i></div>
+            <div class="mb-50">
+                <h3 style="font-size: 20px; font-weight: 800; color: var(--text-dark); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="ticket-check" style="color: #27AE60;"></i> Available Vouchers
+                </h3>
+                <div class="voucher-grid" id="claimableGrid">
+                    </div>
+            </div>
+            
+            <div id="unavailableContainer" class="mt-50" style="display: none;">
+                <h3 style="font-size: 20px; font-weight: 800; color: var(--text-light); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="lock" style="color: var(--text-light);"></i> Currently Unavailable / Used
+                </h3>
+                <div class="voucher-grid" id="unclaimableGrid" style="opacity: 0.85;">
+                    </div>
             </div>
 
-            <div class="promo-card promo-senior">
-                <div class="promo-content">
-                    <div class="promo-value">20% OFF</div>
-                    <h3>Golden Years</h3>
-                    <p>Enjoy 20% discount + VAT exemption for our senior diners. Valid ID required.</p>
-                    <button class="claim-btn" data-code="GOLDEN20" data-title="Senior Discount">
-                        <i data-lucide="star" class="icon-18"></i> Claim Now
-                    </button>
-                </div>
-                <div class="promo-icon-bg"><i data-lucide="award"></i></div>
-            </div>
-
-            <div class="promo-card promo-pwd">
-                <div class="promo-content">
-                    <div class="promo-value">20% OFF</div>
-                    <h3>Inclusion Perks</h3>
-                    <p>We honor PWD discounts on all menu items. Have your PWD ID ready for verification.</p>
-                    <button class="claim-btn" data-code="INCLUSION" data-title="PWD Discount">
-                        <i data-lucide="shield-check" class="icon-18"></i> Claim Now
-                    </button>
-                </div>
-                <div class="promo-icon-bg"><i data-lucide="user-check"></i></div>
-            </div>
-
-            <div class="promo-card promo-lent">
-                <span class="promo-badge">Limited Time</span>
-                <div class="promo-content">
-                    <div class="promo-value">40% OFF</div>
-                    <h3>Seasonal Feast</h3>
-                    <p>40% OFF on all seafood and veggie options during the Lent season. Health is wealth!</p>
-                    <button class="claim-btn" data-code="LENT40" data-title="Lent Season Promo">
-                        <i data-lucide="flame" class="icon-18"></i> Claim Now
-                    </button>
-                </div>
-                <div class="promo-icon-bg"><i data-lucide="utensils-crossed"></i></div>
-            </div>
-
-            <div class="promo-card promo-welcome">
-                <span class="promo-badge">New User</span>
-                <div class="promo-content">
-                   <div class="promo-value">$5 OFF</div>
-                    <h3>Welcome Treat</h3>
-                    <p>Get $5.00 off on your very first order with no minimum spend required!</p>
-                    <button class="claim-btn" data-code="WELCOME5" data-title="New User Promo">
-                        <i data-lucide="gift" class="icon-18"></i> Claim Now
-                    </button>
-                </div>
-                <div class="promo-icon-bg"><i data-lucide="party-popper"></i></div>
-            </div>
-           
-    <div class="promo-card promo-payday">
-        <div class="promo-content">
-            <div class="promo-value">₱100 OFF</div>
-            <h3>Payday Treat</h3>
-            <p>Treat yourself this payday! Get ₱100 off for a minimum spend of ₱500.</p>
-            <button class="claim-btn" data-code="PAYDAY100" data-title="Payday Treat">
-                <i data-lucide="wallet" class="icon-18"></i> Claim Now
-            </button>
         </div>
-        <div class="promo-icon-bg"><i data-lucide="banknote"></i></div>
-    </div>
-
-    <div class="promo-card promo-midnight">
-        <div class="promo-content">
-            <div class="promo-value">15% OFF</div>
-            <h3>Midnight Cravings</h3>
-            <p>Valid 10 PM - 2 AM. Perfect for your late-night study sessions!</p>
-            <button class="claim-btn" data-code="MIDNIGHT15" data-title="Midnight Cravings">
-                <i data-lucide="moon" class="icon-18"></i> Claim Now
-            </button>
-        </div>
-        <div class="promo-icon-bg"><i data-lucide="clock"></i></div>
-    </div>
-
-    <div class="promo-card promo-barkada">
-        <div class="promo-content">
-            <div class="promo-value">₱200 OFF</div>
-            <h3>Barkada Bundle</h3>
-            <p>Gather the squad! Get ₱200 off for orders above ₱1,200.</p>
-            <button class="claim-btn" data-code="BARKADA200" data-title="Barkada Bundle">
-                <i data-lucide="users" class="icon-18"></i> Claim Now
-            </button>
-        </div>
-        <div class="promo-icon-bg"><i data-lucide="smile"></i></div>
-    </div>
-
-    <div class="promo-card promo-freeship">
-        <span class="promo-badge">Best Value</span>
-        <div class="promo-content">
-            <div class="promo-value">FREE SHIPPING</div>
-            <h3>Munch Delivery</h3>
-            <p>No delivery fee! Automatic for orders over ₱1,000 or use this voucher.</p>
-            <button class="claim-btn" data-code="FREESHIP" data-title="Free Delivery">
-                <i data-lucide="truck" class="icon-18"></i> Claim Now
-            </button>
-        </div>
-        <div class="promo-icon-bg"><i data-lucide="package"></i></div>
-    </div>
-
-    </div>
 
         </div>
     </main>

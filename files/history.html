@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order History - munch.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="history-layout">
+    
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <div class="logo-box">
+                <i data-lucide="utensils" class="text-white icon-22"></i>
+            </div>
+            munch.
+        </a>
+     <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="order.html">Order</a>
+            <a href="promos.html">Promos</a>
+            <a href="about.html">About</a>
+        </div>
+        
+       <div class="user-profile" style="display: flex; align-items: center; gap: 15px; margin-right: 50px;">
+            
+         <div style="position:relative;" id="notifBell">
+    <button onclick="toggleNotifPanel()" title="Notifications" class="dev-info-icon" style="background:#FFF4E5;color:#FF6B35;border:none;cursor:pointer;position:relative;">
+        <i data-lucide="bell" class="icon-20"></i>
+        <span id="notifBadge" style="position:absolute;top:6px;right:6px;width:9px;height:9px;background:#E74C3C;border-radius:50%;border:2px solid white;"></span>
+    </button>
+    <!-- Notification Panel -->
+    <div id="notifPanel" style="display:none;position:absolute;top:calc(100% + 12px);right:0;width:320px;background:white;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.12);border:1px solid #F0F0F0;z-index:9999;overflow:hidden;">
+        <div style="padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F5F5F5;">
+            <span style="font-size:15px;font-weight:800;color:var(--text-dark);">Notifications</span>
+            <span style="font-size:12px;color:var(--primary-orange);font-weight:600;cursor:pointer;">Mark all read</span>
+        </div>
+        <div id="notifList" style="max-height:300px;overflow-y:auto;"></div>
+        <div style="padding:12px 18px;text-align:center;border-top:1px solid #F5F5F5;">
+            <span style="font-size:13px;color:var(--text-light);font-weight:500;">You're all caught up! 🎉</span>
+        </div>
+    </div>
+</div>
+
+</div>
+
+</nav>
+
+    <main class="main-content" style="padding: 60px 5% 80px;">
+        <div class="history-wrapper" style="max-width: 900px; margin: 0 auto;">
+
+           <a href="index.html" class="floating-back-btn">
+        <i data-lucide="arrow-left"></i> Back to Order
+    </a>
+            
+            <div class="text-center mb-50">
+                <div class="section-badge">Your Account</div>
+                <h1 style="font-size: 42px; font-weight: 800; color: var(--text-dark); margin-bottom: 10px;">Order <span style="color: var(--primary-orange);">History</span></h1>
+                <p style="color: var(--text-light); font-size: 16px;">A detailed look at all your past magical cravings.</p>
+            </div>
+            <div id="activeOrderBanner" style="display: none; background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange)); border-radius: 20px; padding: 25px 30px; color: white; margin-bottom: 40px; box-shadow: 0 15px 30px rgba(255,107,53,0.2); justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="background: rgba(255,255,255,0.2); padding: 12px; border-radius: 12px;">
+                        <i data-lucide="bike" class="icon-24" style="color: white;"></i>
+                    </div>
+                    <div>
+                        <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 2px;">You have an active order!</h3>
+                        <p style="font-size: 14px; opacity: 0.9;" id="activeOrderBannerText">Fetching status...</p>
+                    </div>
+                </div>
+                <a href="track.html" style="background: white; color: var(--primary-orange); padding: 12px 24px; border-radius: 50px; font-weight: 700; text-decoration: none; font-size: 14px; transition: 0.3s; display: inline-block; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                    Track Order Live ➔
+                </a>
+            </div>
+            <div class="category-filters" style="justify-content: center; flex-wrap: wrap; gap: 10px; margin-bottom: 40px;">
+                <button class="filter-btn active" data-filter="All">All</button>
+                <button class="filter-btn" data-filter="Completed">Completed</button>
+                <button class="filter-btn" data-filter="Cancelled">Cancelled</button>
+            </div>
+
+            <div id="historyListContainer" data-raw-html="" style="display: flex; flex-direction: column; gap: 25px;">
+                </div>
+
+            <div id="historyEmptyState" class="text-center" style="display: none; padding: 60px 20px; background: white; border-radius: 24px; box-shadow: var(--shadow);">
+                <i data-lucide="receipt" style="width: 80px; height: 80px; color: #ccc; margin-bottom: 20px;"></i>
+                <h2 id="emptyStateTitle" style="font-size: 24px; font-weight: 800; color: var(--text-dark);">No Past Orders</h2>
+                <p id="emptyStateDesc" style="color: var(--text-light); margin-bottom: 30px;">You haven't ordered anything yet. Time to fix that craving!</p>
+                <a href="order.html" class="claim-btn" style="background: var(--primary-orange); color: white;">Order Now</a>
+            </div>
+
+        </div>
+
+       <div id="orderDetailsModal" class="modal-overlay" style="z-index: 10000;">
+            <div class="modal-content" style="max-width: 480px; padding: 0; overflow: hidden; background: var(--bg-gray); text-align: left;">
+                
+                <div style="background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange)); padding: 30px 25px 20px; color: white; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; color: rgba(255,255,255,0.8);">Order Details</div>
+                            <h2 style="color: white; margin-bottom: 0; font-size: 24px; font-weight: 800;" id="modalOrderId">#MUNCH-000000</h2>
+                        </div>
+                        <button onclick="closeOrderModal()" style="background: rgba(255,255,255,0.2); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
+                            <i data-lucide="x" style="width: 18px;"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div style="padding: 25px; background: white; border-radius: 24px 24px 0 0; margin-top: -15px; position: relative; max-height: 75vh; overflow-y: auto;">
+                    
+             <div class="track-timeline" style="margin-bottom: 30px;">
+    <div class="track-step active" id="m-step-1">
+        <div class="step-icon"><i data-lucide="clipboard-check"></i></div>
+        <h4>Placed</h4>
+    </div>
+    <div class="track-step" id="m-step-2">
+        <div class="step-icon"><i data-lucide="chef-hat"></i></div>
+        <h4>Cooking</h4>
+    </div>
+    <div class="track-step" id="m-step-3">
+        <div class="step-icon"><i data-lucide="bike"></i></div>
+        <h4>Delivery</h4>
+    </div>
+    <div class="track-step" id="m-step-4">
+        <div class="step-icon" id="m-step-4-icon"><i data-lucide="check-circle"></i></div>
+        <h4>Done</h4>
+    </div>
+</div>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 1px dashed #eee; padding-bottom: 15px;">
+                        <div>
+                            <p style="font-size: 12px; color: var(--text-light); font-weight: 600; text-transform: uppercase;">Status</p>
+                            <p id="modalOrderStatus" style="font-weight: 800; font-size: 15px; color: var(--primary-orange);">Completed</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <p style="font-size: 12px; color: var(--text-light); font-weight: 600; text-transform: uppercase;">Date</p>
+                            <p id="modalOrderDate" style="font-weight: 600; font-size: 14px; color: var(--text-dark);">Mar 27, 2026</p>
+                        </div>
+                    </div>
+
+                    <h3 style="font-size: 14px; font-weight: 700; color: var(--text-dark); margin-bottom: 12px; text-transform: uppercase;">Items Ordered</h3>
+                    <div id="modalOrderItems" style="margin-bottom: 20px;"></div>
+
+                    <div style="background: var(--bg-gray); padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: var(--text-light);">
+                            <span>Subtotal</span>
+                            <span id="modalOrderSubtotal">₱0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: var(--text-light);">
+                            <span>Delivery Fee</span>
+                            <span id="modalOrderDelivery">₱0.00</span>
+                        </div>
+                        <div id="modalDiscountRow" style="display: none; justify-content: space-between; margin-bottom: 8px; font-size: 13px; color: #E74C3C; font-weight: 600;">
+                            <span>Discount</span>
+                            <span id="modalOrderDiscount">-₱0.00</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px; font-size: 18px; font-weight: 800; color: var(--text-dark);">
+                            <span>Total Paid</span>
+                            <span id="modalOrderTotal">₱0.00</span>
+                        </div>
+                    </div>
+
+                    <div style="font-size: 13px; color: var(--text-light);">
+                        <p style="margin-bottom: 5px;"><i data-lucide="user" style="width: 14px; display: inline-block; vertical-align: middle; margin-right: 5px;"></i> <span id="modalCustName" style="color: var(--text-dark); font-weight: 600;">Name</span></p>
+                        <p style="margin-bottom: 5px;"><i data-lucide="phone" style="width: 14px; display: inline-block; vertical-align: middle; margin-right: 5px;"></i> <span id="modalCustPhone" style="color: var(--text-dark); font-weight: 500;">Phone</span></p>
+                        <p><i data-lucide="map-pin" style="width: 14px; display: inline-block; vertical-align: middle; margin-right: 5px;"></i> <span id="modalCustAddress" style="color: var(--text-dark); font-weight: 500;">Address</span></p>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="script.js"></script>
+ <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let currentFilter = 'All';
+
+        // 1. Helper function para sa presyo sa history
+        function formatHistoryPrice(baseValue, savedCurrencyCode) {
+            const code = savedCurrencyCode || 'PHP';
+            const currency = (typeof CURRENCY_DATA !== 'undefined') ? CURRENCY_DATA[code] : { symbol: '₱', rate: 1 };
+            const converted = baseValue * currency.rate;
+            
+            if (code === 'JPY' || code === 'KRW') {
+                return currency.symbol + Math.round(converted).toLocaleString('en-US');
+            } else {
+                return currency.symbol + converted.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        }
+
+        // 2. Filter Button Logic
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                currentFilter = e.currentTarget.getAttribute('data-filter');
+                renderHistory(); 
+            });
+        });
+
+        // 3. Active Order Banner Logic
+        function updateActiveBanner() {
+            const activeOrderJson = localStorage.getItem('munch_active_order');
+            const banner = document.getElementById('activeOrderBanner');
+            const bannerText = document.getElementById('activeOrderBannerText');
+
+            if (activeOrderJson && banner && bannerText) {
+                const order = JSON.parse(activeOrderJson);
+                const elapsedSecs = Math.floor((Date.now() - new Date(order.date).getTime()) / 1000);
+                let statusTxt = "Preparing your meal...";
+
+                if (elapsedSecs < 15) { statusTxt = "Order Placed - Waiting for kitchen..."; }
+                else if (elapsedSecs < 30) { statusTxt = "Kitchen is doing its magic..."; }
+                else if (elapsedSecs < 45) { statusTxt = "Rider is on the way!"; }
+                else { statusTxt = "Order Arrived! Awaiting your confirmation."; }
+
+                bannerText.textContent = `Order ${order.orderId} • ${statusTxt}`;
+                banner.style.display = 'flex';
+            } else if (banner) {
+                banner.style.display = 'none';
+            }
+        }
+window.openOrderModal = (id) => {
+            let history = JSON.parse(localStorage.getItem('munch_order_history')) || [];
+            let order = history.find(o => o.orderId === id);
+            if(!order) return;
+
+            // Ilagay ang text sa header ng modal
+            document.getElementById('modalOrderId').textContent = order.orderId;
+            document.getElementById('modalOrderDate').textContent = order.date;
+            
+            let statusBadge = document.getElementById('modalOrderStatus');
+            statusBadge.textContent = order.status;
+            statusBadge.className = `status-badge status-${order.status.toLowerCase()}`;
+
+            // ==========================================
+            // TIMELINE LIGHTS LOGIC
+            // ==========================================
+            const s1 = document.getElementById('modal-step-1');
+            const s2 = document.getElementById('modal-step-2');
+            const s3 = document.getElementById('modal-step-3');
+            const s4 = document.getElementById('modal-step-4');
+
+            // 1. Patayin muna lahat ng ilaw
+            if(s1) s1.classList.remove('active');
+            if(s2) s2.classList.remove('active');
+            if(s3) s3.classList.remove('active');
+            if(s4) s4.classList.remove('active');
+
+            // 2. Pailawin depende sa status ng order
+            if (order.status === 'Completed') {
+                if(s1) s1.classList.add('active');
+                if(s2) s2.classList.add('active');
+                if(s3) s3.classList.add('active');
+                if(s4) s4.classList.add('active');
+            } else if (order.status === 'Cancelled') {
+                if(s1) s1.classList.add('active'); // Placed lang ang naka-ilaw pag kinansela
+            }
+            // ==========================================
+
+            // I-load ang mga pagkain
+            document.getElementById('modalOrderItems').innerHTML = order.items.map(item => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px;">
+                    <span><span style="font-weight:700;">${item.quantity}x</span> ${item.foodName}</span>
+                    <span style="font-weight:600;">${formatHistoryPrice(item.subtotal, order.currency)}</span>
+                </div>
+            `).join('');
+
+            // I-load ang totals at customer info
+            document.getElementById('modalOrderSubtotal').textContent = formatHistoryPrice(order.subtotal, order.currency);
+            document.getElementById('modalOrderDelivery').textContent = order.deliveryFee === 0 ? "FREE" : formatHistoryPrice(order.deliveryFee, order.currency);
+            document.getElementById('modalOrderTotal').textContent = formatHistoryPrice(order.total, order.currency);
+            
+            document.getElementById('modalCustName').textContent = order.customer.name;
+            document.getElementById('modalCustPhone').textContent = order.customer.phone;
+            document.getElementById('modalCustAddress').textContent = order.customer.address;
+
+            // Palabasin ang modal
+            document.getElementById('orderDetailsModal').style.display = 'flex';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+        // 4. Render History List
+        function renderHistory() {
+            updateActiveBanner(); 
+            const historyData = JSON.parse(localStorage.getItem('munch_order_history')) || [];
+            const container = document.getElementById('historyListContainer');
+            const emptyState = document.getElementById('historyEmptyState');
+            const counts = { 'All': 0, 'Completed': 0, 'Cancelled': 0 };
+            let newHTML = '';
+            let visibleCount = 0;
+
+            for (let i = historyData.length - 1; i >= 0; i--) {
+                const order = historyData[i];
+                if (order.status !== 'Completed' && order.status !== 'Cancelled') continue;
+
+                counts['All']++;
+                if (order.status === 'Completed') counts['Completed']++;
+                if (order.status === 'Cancelled') counts['Cancelled']++;
+
+                if (currentFilter !== 'All' && order.status !== currentFilter) continue;
+
+                visibleCount++;
+                const dateObj = new Date(order.date);
+                const formattedDate = dateObj.toLocaleDateString() + ' • ' + dateObj.toLocaleTimeString();
+                const itemsSummary = order.items.map(i => `<span style="font-weight:700;">${i.quantity}x</span> ${i.foodName}`).join(', ');
+
+                newHTML += `
+                    <div class="history-card">
+                        <div class="history-card-header">
+                            <div>
+                                <div style="font-size: 13px; color: var(--text-light); font-weight: 500;">${formattedDate}</div>
+                                <h3 style="font-size: 18px; font-weight: 800;">${order.orderId}</h3>
+                            </div>
+                            <div class="history-status ${order.status === 'Completed' ? 'status-done' : 'status-cancel'}">
+                                ${order.status}
+                            </div>
+                        </div>
+                        <div class="history-card-body">
+                            <div style="flex: 1;">
+                                <p style="font-size: 14px; color: #5d6d7e;">${itemsSummary}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 22px; font-weight: 800; color: var(--primary-orange);">${formatHistoryPrice(order.total, order.currency)}</div>
+                                <button onclick="viewOrderDetails('${order.orderId}', '${order.status}')" style="background: var(--light-orange); color: var(--primary-orange); border: none; padding: 6px 14px; border-radius: 8px; font-weight: 700; cursor: pointer;">View Details</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = newHTML;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            
+            if (visibleCount === 0) {
+                emptyState.style.display = 'block';
+                container.style.display = 'none';
+            } else {
+                emptyState.style.display = 'none';
+                container.style.display = 'flex';
+            }
+        }
+
+        // 5. View Details Modal Logic (Solid Orange & Horizontal)
+        window.viewOrderDetails = function(orderId, currentStatus) {
+            const historyData = JSON.parse(localStorage.getItem('munch_order_history')) || [];
+            const order = historyData.find(o => o.orderId === orderId);
+            if (!order) return;
+
+            document.getElementById('modalOrderId').textContent = order.orderId;
+            document.getElementById('modalOrderStatus').textContent = currentStatus;
+            document.getElementById('modalOrderDate').textContent = new Date(order.date).toLocaleString();
+
+            const s2 = document.getElementById('m-step-2');
+            const s3 = document.getElementById('m-step-3');
+            const s4 = document.getElementById('m-step-4');
+
+            [s2, s3, s4].forEach(s => { s.classList.remove('active', 'cancelled'); s.style.display = 'flex'; });
+            s2.querySelector('.step-icon').innerHTML = '<i data-lucide="chef-hat"></i>';
+            s2.querySelector('h4').textContent = 'Cooking';
+
+            if (currentStatus === 'Cancelled') {
+                s2.classList.add('cancelled');
+                s2.querySelector('.step-icon').innerHTML = '<i data-lucide="x"></i>';
+                s2.querySelector('h4').textContent = 'Cancelled';
+                // IMPORTANT: Don't hide s3 at s4, let them show as inactive/grey
+                // s3.style.display = 'none';
+                // s4.style.display = 'none';
+                document.getElementById('modalOrderStatus').style.color = '#E74C3C';
+            } else {
+                s2.classList.add('active'); s3.classList.add('active'); s4.classList.add('active');
+                document.getElementById('modalOrderStatus').style.color = 'var(--primary-orange)';
+            }
+
+            const itemsList = document.getElementById('modalOrderItems');
+            itemsList.innerHTML = order.items.map(item => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 13px;">
+                    <span><span style="font-weight:700;">${item.quantity}x</span> ${item.foodName}</span>
+                    <span style="font-weight:600;">${formatHistoryPrice(item.subtotal, order.currency)}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('modalOrderSubtotal').textContent = formatHistoryPrice(order.subtotal, order.currency);
+            document.getElementById('modalOrderDelivery').textContent = order.deliveryFee === 0 ? "FREE" : formatHistoryPrice(order.deliveryFee, order.currency);
+            document.getElementById('modalOrderTotal').textContent = formatHistoryPrice(order.total, order.currency);
+            
+            document.getElementById('modalCustName').textContent = order.customer.name;
+            document.getElementById('modalCustPhone').textContent = order.customer.phone;
+            document.getElementById('modalCustAddress').textContent = order.customer.address;
+
+            document.getElementById('orderDetailsModal').style.display = 'flex';
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+
+        window.closeOrderModal = () => document.getElementById('orderDetailsModal').style.display = 'none';
+        
+        renderHistory();
+        setInterval(renderHistory, 5000);
+    });
+</script>
+</body>
+</html>

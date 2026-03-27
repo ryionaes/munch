@@ -51,10 +51,30 @@
             </div>
         </div>
     </div>
-    <a href="developers.html" class="dev-info-icon" title="About Developers">
-        <i data-lucide="info" class="icon-20"></i>
-    </a>
+    <a href="history.html" class="dev-info-icon" title="Order History" style="background: #FFF4E5; color: #FF6B35;">
+                <i data-lucide="clock-4" class="icon-20"></i>
+            </a>
+    <div style="position:relative;" id="notifBell">
+    <button onclick="toggleNotifPanel()" title="Notifications" class="dev-info-icon" style="background:#FFF4E5;color:#FF6B35;border:none;cursor:pointer;position:relative;">
+        <i data-lucide="bell" class="icon-20"></i>
+        <span id="notifBadge" style="position:absolute;top:6px;right:6px;width:9px;height:9px;background:#E74C3C;border-radius:50%;border:2px solid white;"></span>
+    </button>
+    <!-- Notification Panel -->
+    <div id="notifPanel" style="display:none;position:absolute;top:calc(100% + 12px);right:0;width:320px;background:white;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.12);border:1px solid #F0F0F0;z-index:9999;overflow:hidden;">
+        <div style="padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F5F5F5;">
+            <span style="font-size:15px;font-weight:800;color:var(--text-dark);">Notifications</span>
+            <span style="font-size:12px;color:var(--primary-orange);font-weight:600;cursor:pointer;">Mark all read</span>
+        </div>
+        <div id="notifList" style="max-height:300px;overflow-y:auto;"></div>
+        <div style="padding:12px 18px;text-align:center;border-top:1px solid #F5F5F5;">
+            <span style="font-size:13px;color:var(--text-light);font-weight:500;">You're all caught up! 🎉</span>
+        </div>
+    </div>
 </div>
+
+</div>
+
+</nav>
     </nav>
 
     <header class="dev-header">
@@ -62,13 +82,15 @@
         <p class="reveal">The passionate team working behind the scenes to bring magic to your dining experience.</p>
     </header>
 
+    
+
     <section class="carousel-outer reveal">
         <button class="nav-btn" id="prev-slide-btn">
             <i data-lucide="chevron-left" class="icon-28"></i>
         </button>
 
         <div class="carousel-view">
-            <div class="carousel-track" id="devTrack">
+           <div class="carousel-track" id="devTrack">
                 
                 <div class="dev-card">
                     <div class="dev-photo-container">
@@ -79,18 +101,13 @@
                     </div>
                     <p class="section-tag">BSINFOTECH 2D</p>
                     <h2>John Harold Beladas</h2>
-                    <span class="role-badge">Lead Developer / UI Design</span>
-                    <p class="dev-desc">Passionate about web development, coding in C#, and building interactive interfaces that prioritize the user's journey.</p>
+                    <span class="role-badge">Lead Full-Stack Developer & UI/UX</span>
+                    <p class="dev-desc">The main driving force behind munch. Orchestrated the entire project lifecycle, from designing the sleek, modern interface to engineering the core front-end and back-end logic.</p>
                     <div class="skill-tags">
-                        <span class="skill-tag">UI/UX</span>
-                        <span class="skill-tag">C#</span>
-                        <span class="skill-tag">Frontend</span>
-                        <span class="skill-tag">CSS Art</span>
-                    </div>
-                    <div class="social-links">
-                        <a href="#" class="social-link"><i data-lucide="github" class="icon-20"></i></a>
-                        <a href="#" class="social-link"><i data-lucide="linkedin" class="icon-20"></i></a>
-                        <a href="#" class="social-link"><i data-lucide="mail" class="icon-20"></i></a>
+                        <span class="skill-tag">UI/UX Design</span>
+                        <span class="skill-tag">Front-End</span>
+                        <span class="skill-tag">Back-End</span>
+                        <span class="skill-tag">System Architecture</span>
                     </div>
                 </div>
 
@@ -103,19 +120,15 @@
                     </div>
                     <p class="section-tag">BSINFOTECH 2D</p>
                     <h2>Gabriel AE Ron Exconde</h2>
-                    <span class="role-badge">Backend / Database Architect</span>
-                    <p class="dev-desc">Ensures everything runs smoothly behind the scenes, managing data flow and optimizing performance for thousands of users.</p>
+                    <span class="role-badge">Developer & Documentation Lead</span>
+                    <p class="dev-desc">Played a vital role in integrating front-end components with back-end functionalities. Also handled the project's comprehensive documentation to ensure everything is structured and clear.</p>
                     <div class="skill-tags">
-                        <span class="skill-tag">Node.js</span>
-                        <span class="skill-tag">SQL</span>
-                        <span class="skill-tag">API Design</span>
-                        <span class="skill-tag">Firebase</span>
+                        <span class="skill-tag">Front-End</span>
+                        <span class="skill-tag">Back-End</span>
+                        <span class="skill-tag">Documentation</span>
+                        <span class="skill-tag">Integration</span>
                     </div>
-                    <div class="social-links">
-                        <a href="#" class="social-link"><i data-lucide="github" class="icon-20"></i></a>
-                        <a href="#" class="social-link"><i data-lucide="database" class="icon-20"></i></a>
-                        <a href="#" class="social-link"><i data-lucide="mail" class="icon-20"></i></a>
-                    </div>
+                   
                 </div>
 
                 <div class="dev-card">
@@ -127,18 +140,13 @@
                     </div>
                     <p class="section-tag">BSINFOTECH 2D</p>
                     <h2>Cyrus Taclan</h2>
-                    <span class="role-badge">QA & Security Analyst</span>
-                    <p class="dev-desc">The bug hunter. Cyrus ensures the platform is polished, secure, and completely error-free before it ever reaches your screen.</p>
+                    <span class="role-badge">QA Analyst & Front-End</span>
+                    <p class="dev-desc">Ensured a bug-free and polished user experience through rigorous quality assurance testing. Contributed to front-end layouts and led the overall project presentation.</p>
                     <div class="skill-tags">
+                        <span class="skill-tag">Quality Assurance</span>
+                        <span class="skill-tag">Front-End</span>
                         <span class="skill-tag">Testing</span>
-                        <span class="skill-tag">Security</span>
-                        <span class="skill-tag">Debugging</span>
-                        <span class="skill-tag">Analytics</span>
-                    </div>
-                    <div class="social-links">
-                        <a href="#" class="social-link"><i data-lucide="github" class="icon-20"></i></a>
-                        <a href="#" class="social-link"><i data-lucide="shield" class="icon-20"></i></a>
-                        <a href="#" class="social-link"><i data-lucide="mail" class="icon-20"></i></a>
+                        <span class="skill-tag">Presentation</span>
                     </div>
                 </div>
 
