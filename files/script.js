@@ -57,45 +57,62 @@ function changeCurrency(newCurrency) {
 }
 
 function updateAllVisiblePrices() {
-    // 1. Update Food Grid Prices (Fixed Regex to include openAddonsModal)
-    document.querySelectorAll('.food-card').forEach(card => {
-        const btn = card.querySelector('.btn-add-card');
-        const priceStrong = card.querySelector('.card-bottom strong');
-        if (btn && priceStrong) {
-            const onclickStr = btn.getAttribute('onclick');
-            // This new regex catches BOTH the old addOrder and the new openAddonsModal
-            const match = onclickStr.match(/(?:addOrder|openAddonsModal)\([^,]+,\s*'[^']+',\s*([\d.]+)/);
-            if (match && match[1]) {
-                const basePrice = parseFloat(match[1]);
-                priceStrong.textContent = formatPrice(basePrice);
+    // 1. Update Food Grid Prices (Wrapped in safety check)
+    try {
+        document.querySelectorAll('.food-card').forEach(card => {
+            const btn = card.querySelector('.btn-add-card');
+            const priceStrong = card.querySelector('.card-bottom strong');
+            if (btn && priceStrong) {
+                const onclickStr = btn.getAttribute('onclick');
+                const match = onclickStr.match(/(?:addOrder|openAddonsModal)\([^,]+,\s*'[^']+',\s*([\d.]+)/);
+                if (match && match[1]) {
+                    const basePrice = parseFloat(match[1]);
+                    priceStrong.textContent = formatPrice(basePrice);
+                }
             }
+        });
+    } catch(e) { console.log("Grid update skipped"); }
+
+    // 2. Promo Auto-Scanner Updates
+    try {
+        document.querySelectorAll('[data-base-price]').forEach(el => {
+            const basePrice = parseFloat(el.getAttribute('data-base-price'));
+            if (!isNaN(basePrice)) {
+                el.textContent = formatPrice(basePrice);
+            }
+        });
+    } catch(e) { console.log("Promo update skipped"); }
+
+    // 3. Sync Custom Dropdown UI
+    try {
+        const flagMap = {
+            'PHP': 'ph.png', 'USD': 'us.png', 'EUR': 'eu.png', 
+            'GBP': 'gb.png', 'JPY': 'jp.png', 'KRW': 'kr.png'
+        };
+        const flagImg = document.getElementById('selectedFlag');
+        const currencyText = document.getElementById('selectedCurrency');
+        
+        if (flagImg && currencyText && flagMap[currentCurrency]) {
+            flagImg.src = `https://flagcdn.com/w20/${flagMap[currentCurrency]}`;
+            currencyText.textContent = currentCurrency;
         }
-    });
+    } catch(e) { console.log("Navbar sync skipped"); }
 
-    // 2. Sync Custom Dropdown UI (Updates the flag and text if changed)
-    const flagMap = {
-        'PHP': 'ph.png', 'USD': 'us.png', 'EUR': 'eu.png', 
-        'GBP': 'gb.png', 'JPY': 'jp.png', 'KRW': 'kr.png'
-    };
-    const flagImg = document.getElementById('selectedFlag');
-    const currencyText = document.getElementById('selectedCurrency');
+    // 4. Cart & UI Elements (THE CULPRITS - Now safely ignored if missing!)
+    try { if (typeof renderTable === 'function') renderTable(); } catch(e) {}
+    try { if (typeof updateStats === 'function') updateStats(); } catch(e) {}
     
-    if (flagImg && currencyText && flagMap[currentCurrency]) {
-        flagImg.src = `https://flagcdn.com/w20/${flagMap[currentCurrency]}`;
-        currencyText.textContent = currentCurrency;
-    }
-
-    // 3. Re-render Cart, Stats, and Modal
-    renderTable();
-    updateStats();
-    if (document.getElementById('checkoutModal') && document.getElementById('checkoutModal').style.display === 'flex') {
-        renderCheckoutTotals();
-    }
+    try {
+        const checkoutModal = document.getElementById('checkoutModal');
+        if (checkoutModal && checkoutModal.style.display === 'flex') {
+            if (typeof renderCheckoutTotals === 'function') renderCheckoutTotals();
+        }
+    } catch(e) {}
     
-    // 4. Apply region-specific delivery fees
-    updateCheckoutRegion(); 
+    try { if (typeof updateCheckoutRegion === 'function') updateCheckoutRegion(); } catch(e) {}
+    // Sa loob ng updateAllVisiblePrices(), idagdag bago magsara ng function (bago line 113):
+try { if (typeof renderPromos === 'function') renderPromos(); } catch(e) {}x
 }
-
 // ==========================================
 // FORCE GLOBAL ACCESS (CRITICAL FIX)
 // ==========================================
@@ -1872,3 +1889,28 @@ window.reorderPastMeal = function(orderId) {
         }, 1000);
     }
 }; 
+
+// ==========================================
+// PROMO PAGE PRICE INITIALIZER
+// ==========================================
+window.addEventListener('DOMContentLoaded', () => {
+    // Look for text elements that might contain a price
+    const textElements = document.querySelectorAll('strong, span, h2, h3, h4, p, b, div.price');
+    
+    textElements.forEach(el => {
+        // Ensure we only tag elements that have the ₱ sign AND don't have other HTML tags inside them
+        if (el.children.length === 0 && el.textContent.includes('₱')) {
+            const rawNumber = el.textContent.replace(/[^\d.]/g, ''); // Extract just the digits
+            if (rawNumber !== '' && !isNaN(rawNumber)) {
+                el.setAttribute('data-base-price', rawNumber);
+            }
+        }
+    });
+
+    // Run the update once right after the page loads to sync with saved currency
+    setTimeout(() => {
+        if (typeof updateAllVisiblePrices === 'function') {
+            updateAllVisiblePrices();
+        }
+    }, 150);
+});
