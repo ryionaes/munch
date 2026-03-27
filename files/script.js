@@ -1837,10 +1837,33 @@ window.reorderPastMeal = function(orderId) {
     const pastOrder = historyData.find(o => o.orderId === orderId);
     
     if (pastOrder && pastOrder.items) {
-        pastOrder.items.forEach(item => {
-            // Push items back to cart
-            addOrder(item.foodName, item.category, item.price, item.quantity, item.deliveryTime, item.rating);
+        pastOrder.items.forEach(pastItem => {
+            // Check if exact same item is already in the cart
+            const existingOrder = orders.find(o => o.foodName === pastItem.foodName);
+
+            if (existingOrder) {
+                // If it exists, just add the quantity to avoid duplicates
+                existingOrder.quantity += pastItem.quantity;
+                existingOrder.subtotal = existingOrder.price * existingOrder.quantity;
+            } else {
+                // Push directly to the array to preserve the original image and Add-ons
+                orders.push({
+                    id: Date.now() + Math.random(), // Unique ID
+                    foodName: pastItem.foodName,
+                    category: pastItem.category,
+                    price: pastItem.price,
+                    quantity: pastItem.quantity,
+                    subtotal: pastItem.subtotal,
+                    deliveryTime: pastItem.deliveryTime,
+                    rating: pastItem.rating,
+                    imageSrc: pastItem.imageSrc // Restores the saved image!
+                });
+            }
         });
+
+        // Save updated cart
+        localStorage.setItem('foodhub_orders', JSON.stringify(orders));
+        
         showToast("Order items added to your cart!", "success");
         
         // Redirect to order page after 1 second
@@ -1848,4 +1871,4 @@ window.reorderPastMeal = function(orderId) {
             window.location.href = 'order.html';
         }, 1000);
     }
-};
+}; 
