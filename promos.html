@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promos - munch.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23FF6B35'/%3E%3Cg stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/%3E%3C/g%3E%3C/svg%3E">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="promos-layout">
+    
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <div class="logo-box">
+                <i data-lucide="utensils" class="text-white icon-22"></i>
+            </div>
+            munch.
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="order.html">Order</a>
+            <a href="promos.html" class="active">Promos</a>
+            <a href="about.html">About</a>
+        </div>
+        <div id="navbarUserZone" style="display: flex; align-items: center; gap: 15px;"></div>
+
+</nav>
+
+    <main class="main-content">
+       
+        <div class="page-header" style="text-align: center; padding: 60px 0 40px;">
+            <div style="display: inline-flex; align-items: center; gap: 8px; background: var(--light-orange); color: var(--primary-orange); padding: 8px 18px; border-radius: 50px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 20px;">
+                <i data-lucide="sparkles" class="icon-14"></i> Exclusive Rewards
+            </div>
+            <h1 style="font-size: clamp(32px, 5vw, 52px); font-weight: 800; color: var(--text-dark); margin-bottom: 14px; line-height: 1.1;">Vouchers & <span style="color: var(--primary-orange);">Discounts</span></h1>
+            <p style="color: var(--text-light); font-size: 17px; max-width: 520px; margin: 0 auto; line-height: 1.6;">Claim your perks and save more on every order. Pick a voucher, add it to your wallet, and apply it at checkout.</p>
+        </div>
+
+        <div class="wallet-summary" onclick="openWalletModal()" title="View my vouchers">
+            <div class="wallet-info">
+                <div class="wallet-icon"><i data-lucide="wallet" class="icon-24"></i></div>
+                <div class="wallet-text">
+                    <h4>My Wallet</h4>
+                    <p id="claimedCount">0 Vouchers Claimed</p>
+                    <span class="wallet-summary-hint">Tap to view →</span>
+                </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; color: var(--text-light); font-size: 13px; font-weight: 500;">
+                <i data-lucide="calendar" class="icon-14"></i>
+                Valid until Dec 31, 2026
+            </div>
+        </div>
+        
+       <div id="promoSectionsWrapper" style="width: 100%;">
+            
+            <div class="mb-50">
+                <h3 style="font-size: 20px; font-weight: 800; color: var(--text-dark); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="ticket-check" style="color: #27AE60;"></i> Available Vouchers
+                </h3>
+                <div class="voucher-grid" id="claimableGrid">
+                    </div>
+            </div>
+            
+            <div id="unavailableContainer" class="mt-50" style="display: none;">
+                <h3 style="font-size: 20px; font-weight: 800; color: var(--text-light); margin-bottom: 20px; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="lock" style="color: var(--text-light);"></i> Currently Unavailable / Used
+                </h3>
+                <div class="voucher-grid" id="unclaimableGrid" style="opacity: 0.85;">
+                    </div>
+            </div>
+
+        </div>
+
+        </div>
+    </main>
+
+    <!-- WALLET MODAL -->
+    <div id="walletModal" class="modal-overlay">
+        <div class="wallet-modal-content">
+            <div class="wallet-modal-header">
+                <div class="wallet-modal-header-top">
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div style="width:42px;height:42px;background:rgba(255,255,255,0.2);border-radius:12px;display:flex;align-items:center;justify-content:center;">
+                            <i data-lucide="wallet" style="width:22px;height:22px;"></i>
+                        </div>
+                        <div>
+                            <h2>My Wallet</h2>
+                            <p>Your claimed vouchers</p>
+                        </div>
+                    </div>
+                    <button class="wallet-modal-close" onclick="closeModal()">
+                        <i data-lucide="x" style="width:18px;height:18px;"></i>
+                    </button>
+                </div>
+                <div class="wallet-modal-stats">
+                    <div class="wallet-stat">
+                        <span class="wallet-stat-val" id="walletStatClaimed">0</span>
+                        <span class="wallet-stat-lbl">Claimed</span>
+                    </div>
+                    <div class="wallet-stat">
+                        <span class="wallet-stat-val" id="walletStatUsed">0</span>
+                        <span class="wallet-stat-lbl">Used</span>
+                    </div>
+                    <div class="wallet-stat">
+                        <span class="wallet-stat-val" id="walletStatActive">0</span>
+                        <span class="wallet-stat-lbl">Active</span>
+                    </div>
+                </div>
+            </div>
+            <div class="wallet-modal-body">
+                <div class="wallet-voucher-list" id="walletVoucherList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="claimModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-icon">
+                <i data-lucide="ticket" class="icon-32"></i>
+            </div>
+            <h2 id="modalTitle">Claim Voucher</h2>
+            <p class="modal-desc">Use this code at checkout to apply your discount.</p>
+            
+            <div class="promo-code-box">
+                <span id="promoCodeDisplay" class="code-text">XXXXXX</span>
+                <button class="copy-btn" id="copyCodeBtn" title="Copy Code">
+                    <i data-lucide="copy" class="icon-20"></i>
+                </button>
+            </div>
+
+            <button class="btn-confirm-claim" id="confirmPromoBtn">Add to My Wallet</button>
+            <button class="modal-action-btn" id="closePromoBtn">Close</button>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="toast-container"></div>
+    
+  <!-- COPY THIS ENTIRE FOOTER CODE TO ALL YOUR HTML PAGES -->
+<!-- Files to paste into: about.html, promos.html, developers.html -->
+
+<footer class="site-footer">
+    <div class="footer-content">
+        <div class="footer-logo">
+            <div class="footer-logo-icon">
+                <i data-lucide="utensils" class="text-white icon-20"></i>
+            </div>
+            munch.
+        </div>
+        <p class="footer-desc">Fast, reliable, and always delicious.</p>
+        
+        <div class="footer-links">
+            <a href="index.html">Home</a>
+            <a href="order.html">Order</a>
+            <a href="promos.html">Promos</a>
+            <a href="about.html">About Us</a>
+            <a href="developers.html">Developers</a>
+        </div>
+
+        <div class="footer-social">
+            <i data-lucide="facebook"></i>
+            <i data-lucide="instagram"></i>
+            <i data-lucide="twitter"></i>
+        </div>
+
+        <div class="footer-bottom">
+            &copy; 2026 munch. All rights reserved.
+        </div>
+    </div>
+</footer>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="script.js"></script>
+    
+</body>
+</html>
