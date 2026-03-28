@@ -317,9 +317,25 @@
                 localStorage.setItem('foodhub_currency', preferredCurrency);
 
                 showToast('Profile updated successfully! ✨', 'success');
-                loadProfileData(updatedCurrentUser);
-                toggleEditMode(false); // Balik sa static view kapag tapos na mag save
-                authUpdateNavbar(); // Para mag update din yung username sa top nav if ever nabago
+
+                // --- BAGO: I-trigger ang Loader ---
+                const loader = document.getElementById('munchLoader');
+                if (loader) {
+                    document.getElementById('loaderActionText').textContent = "Saving changes...";
+                    loader.style.display = 'flex';
+                    setTimeout(() => loader.style.opacity = '1', 10);
+                }
+
+                // Reload page data after a brief delay
+                setTimeout(() => {
+                    if (loader) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.style.display = 'none', 300);
+                    }
+                    loadProfileData(updatedCurrentUser);
+                    toggleEditMode(false); // Balik sa static view kapag tapos na mag save
+                    authUpdateNavbar(); // Para mag update din yung username sa top nav if ever nabago
+                }, 1500); // <-- Gawin nating 1.5 seconds ang fake loading para astig
             }
         }
 
@@ -344,5 +360,16 @@
             }
         });
     </script>
+
+    <div id="munchLoader" style="display: none; opacity: 0; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 999999; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease;">
+        <div style="display: flex; align-items: center; gap: 12px; font-size: 42px; font-weight: 800; color: var(--text-dark); margin-bottom: 12px;">
+            <div style="background: var(--primary-orange); color: white; width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; animation: munchPulse 1.5s infinite;">
+                <i data-lucide="utensils" style="width: 28px; height: 28px;"></i>
+            </div>
+            munch.
+        </div>
+        <div style="color: var(--text-light); font-size: 16px; font-weight: 500;">fast, reliable, and always delicious.</div>
+        <div id="loaderActionText" style="margin-top: 30px; font-size: 14px; font-weight: 700; color: var(--primary-orange); text-transform: uppercase; letter-spacing: 1px;">Processing...</div>
+    </div>
 </body>
 </html>

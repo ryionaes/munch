@@ -264,19 +264,25 @@ function checkOrderStatus() {
           // ==========================================
             // EXECUTE LOGIC INSIDE MODALS
             // ==========================================
-            document.getElementById('executeCancelBtn').addEventListener('click', () => {
+           document.getElementById('executeCancelBtn').addEventListener('click', () => {
                 let history = JSON.parse(localStorage.getItem('munch_order_history')) || [];
                 let target = history.find(o => o.orderId === order.orderId);
                 if(target) target.status = 'Cancelled';
                 localStorage.setItem('munch_order_history', JSON.stringify(history));
 
                 localStorage.removeItem('munch_active_order');
-                
                 document.getElementById('cancelConfirmModal').style.display = 'none';
-                showToast("Order Cancelled successfully.", "error");
                 
-                // ITO ANG BINAGO: Redirect to history.html
-                setTimeout(() => window.location.href = 'history.html', 1500); 
+                // --- BAGO: I-trigger ang Loader ---
+                const loader = document.getElementById('munchLoader');
+                if (loader) {
+                    document.getElementById('loaderActionText').textContent = "Cancelling order...";
+                    loader.style.display = 'flex';
+                    setTimeout(() => loader.style.opacity = '1', 10);
+                }
+
+                showToast("Order Cancelled successfully.", "error");
+                setTimeout(() => window.location.href = 'history.html', 2000); 
             });
 
             document.getElementById('executeReceiveBtn').addEventListener('click', () => {
@@ -286,14 +292,31 @@ function checkOrderStatus() {
                 localStorage.setItem('munch_order_history', JSON.stringify(history));
 
                 localStorage.removeItem('munch_active_order');
-                
                 document.getElementById('receiveConfirmModal').style.display = 'none';
-                showToast("Yum! Enjoy your munch.", "success");
                 
-                // ITO ANG BINAGO: Redirect to history.html
-                setTimeout(() => window.location.href = 'history.html', 1500);
+                // --- BAGO: I-trigger ang Loader ---
+                const loader = document.getElementById('munchLoader');
+                if (loader) {
+                    document.getElementById('loaderActionText').textContent = "Updating status...";
+                    loader.style.display = 'flex';
+                    setTimeout(() => loader.style.opacity = '1', 10);
+                }
+
+                showToast("Yum! Enjoy your munch.", "success");
+                setTimeout(() => window.location.href = 'history.html', 2000);
             });
         });
     </script>
+
+    <div id="munchLoader" style="display: none; opacity: 0; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 999999; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease;">
+        <div style="display: flex; align-items: center; gap: 12px; font-size: 42px; font-weight: 800; color: var(--text-dark); margin-bottom: 12px;">
+            <div style="background: var(--primary-orange); color: white; width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; animation: munchPulse 1.5s infinite;">
+                <i data-lucide="utensils" style="width: 28px; height: 28px;"></i>
+            </div>
+            munch.
+        </div>
+        <div style="color: var(--text-light); font-size: 16px; font-weight: 500;">fast, reliable, and always delicious.</div>
+        <div id="loaderActionText" style="margin-top: 30px; font-size: 14px; font-weight: 700; color: var(--primary-orange); text-transform: uppercase; letter-spacing: 1px;">Processing...</div>
+    </div>
 </body>
 </html>

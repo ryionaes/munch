@@ -372,5 +372,36 @@
 
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="script.js"></script>
+
+    <style>
+        @keyframes munchPulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(255, 107, 53, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 107, 53, 0); }
+        }
+    </style>
+    <div id="munchLoader" style="display: flex; opacity: 1; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #ffffff; z-index: 999999; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.3s ease;">
+        <div style="display: flex; align-items: center; gap: 12px; font-size: 42px; font-weight: 800; color: #2C3E50; margin-bottom: 12px;">
+            <div style="background: #FF6B35; color: white; width: 50px; height: 50px; border-radius: 14px; display: flex; align-items: center; justify-content: center; animation: munchPulse 1.5s infinite;">
+                <i data-lucide="utensils" style="width: 28px; height: 28px;"></i>
+            </div>
+            munch.
+        </div>
+        <div style="color: #95A5A6; font-size: 16px; font-weight: 500;">fast, reliable, and always delicious.</div>
+        <div id="loaderActionText" style="margin-top: 30px; font-size: 14px; font-weight: 700; color: #FF6B35; text-transform: uppercase; letter-spacing: 1px;">Starting up...</div>
+    </div>
+
+    <script>
+        // Papawelain ang splash screen after 1.5 seconds
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                const loader = document.getElementById('munchLoader');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 300);
+                }
+            }, 1500);
+        });
+    </script>
 </body>
 </html>

@@ -1,3 +1,55 @@
+
+/* ==========================================
+   MUNCH CUSTOM LOADER
+   ========================================== */
+#munchLoader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+    z-index: 999999;
+    display: none; /* Naka-hide by default */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease;
+}
+
+.loader-logo-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 42px;
+    font-weight: 800;
+    color: var(--text-dark);
+    margin-bottom: 12px;
+}
+
+.loader-icon-box {
+    background: var(--primary-orange);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: munchPulse 1.5s infinite;
+}
+
+.loader-tagline {
+    color: var(--text-light);
+    font-size: 16px;
+    font-weight: 500;
+}
+
+@keyframes munchPulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 107, 53, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(255, 107, 53, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 107, 53, 0); }
+}
 /* ==========================================
    ROOT VARIABLES & BASE
    ========================================== */

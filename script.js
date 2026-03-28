@@ -4,6 +4,7 @@
 // Kinukuha natin ang original na function ng browser
 const originalSetItem = localStorage.setItem.bind(localStorage);
 const originalGetItem = localStorage.getItem.bind(localStorage);
+const originalRemoveItem = localStorage.removeItem.bind(localStorage); // <-- ITO ANG BAGO!
 
 // Ito yung mga data keys na gusto nating i-hiwalay per user
 const MUNCH_KEYS = [
@@ -40,6 +41,11 @@ localStorage.setItem = function(key, value) {
 
 localStorage.getItem = function(key) {
     return originalGetItem(getDynamicKey(key));
+};
+
+// --- ITO ANG NAKALIMUTAN NATIN KANINA ---
+localStorage.removeItem = function(key) {
+    originalRemoveItem(getDynamicKey(key));
 };
 
 // ==========================================
@@ -2050,9 +2056,16 @@ window.authTogglePw = function(inputId, btn) {
 };
 
 // ---- Show auth modal ----
+// ---- Show auth modal ----
 function authShowModal(defaultTab = 'login') {
     const modal = document.getElementById('authModal');
-    if (!modal) return;
+    
+    // KUNG WALANG MODAL SA PAGE NA ITO (tulad sa about.html), ibalik sa home!
+    if (!modal) {
+        window.location.href = 'index.html';
+        return;
+    }
+    
     modal.style.display = 'flex';
     authSwitchTab(defaultTab);
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -2064,6 +2077,7 @@ function authHideModal() {
     if (modal) modal.style.display = 'none';
 }
 
+// ---- LOGIN ----
 // ---- LOGIN ----
 window.authLogin = function() {
     const username = (document.getElementById('loginUsername')?.value || '').trim().toLowerCase();
@@ -2082,13 +2096,22 @@ window.authLogin = function() {
     if (!user) { showErr('Incorrect username or password. Try again.'); return; }
 
     authSetSession(user);
-    showToast(`Welcome back, ${user.name.split(' ')[0]}! 🎉`, 'success');
     authHideModal();
     
-    // Refresh ang page para mag-load ang specific cart at history ng user na ito
+    // --- BAGO: I-trigger ang Loader ---
+    const loader = document.getElementById('munchLoader');
+    if (loader) {
+        const actionText = document.getElementById('loaderActionText');
+        if(actionText) actionText.textContent = "Authenticating...";
+        loader.style.display = 'flex';
+        setTimeout(() => loader.style.opacity = '1', 10);
+    }
+
+    // Delay bago mag-refresh para makita ang loading screen
     setTimeout(() => {
+        showToast(`Welcome back, ${user.name.split(' ')[0]}! 🎉`, 'success');
         window.location.reload(); 
-    }, 800);
+    }, 1500);
 };
 
 // ---- REGISTER ----
@@ -2101,8 +2124,6 @@ window.authRegister = function() {
     const phone      = (document.getElementById('regPhone')?.value || '').trim();
     const password   = (document.getElementById('regPassword')?.value || '');
     const confirmPw  = (document.getElementById('regConfirmPassword')?.value || '');
-    
-    // --- BAGO: Kunin ang currency ---
     const currency   = (document.getElementById('regCurrency')?.value || 'PHP');
 
     const errEl      = document.getElementById('registerError');
@@ -2128,7 +2149,6 @@ window.authRegister = function() {
     if (users.find(u => u.username === username)) { showErr('That username is already taken. Choose another.'); return; }
     if (users.find(u => u.email === email)) { showErr('An account with that email already exists.'); return; }
 
-    // --- BAGO: Idagdag ang currency sa storage nung nag register ---
     localStorage.removeItem('foodhub_orders');
     localStorage.removeItem('munch_order_history');
     localStorage.removeItem('munch_active_order');
@@ -2136,37 +2156,38 @@ window.authRegister = function() {
     
     orders = [];
     claimedCoupons = {};
-    
-    // I-set agad ang currency sa browser memory para mag-reflect sa UI
     localStorage.setItem('foodhub_currency', currency);
 
     const newUser = {
         name: `${firstName} ${lastName}`,
-        username,
-        email,
-        address,
-        phone,
-        password, 
-        currency, // <-- Isave sa user data
+        username, email, address, phone, password, currency,
         createdAt: new Date().toISOString()
     };
 
     users.push(newUser);
     authSaveUsers(users);
     authSetSession(newUser);
-
-    successEl.classList.add('show');
-
+    
     let startingWallet = {};
     startingWallet['WELCOME5'] = { claimed: true, used: false };
     localStorage.setItem('foodhub_wallet', JSON.stringify(startingWallet));
 
+    successEl.classList.add('show');
+    authHideModal();
+
+    // --- BAGO: I-trigger ang Loader ---
+    const loader = document.getElementById('munchLoader');
+    if (loader) {
+        const actionText = document.getElementById('loaderActionText');
+        if(actionText) actionText.textContent = "Setting up your account...";
+        loader.style.display = 'flex';
+        setTimeout(() => loader.style.opacity = '1', 10);
+    }
+
     setTimeout(() => {
-        authHideModal();
         showToast(`Welcome to munch., ${firstName}! 🍔 Your WELCOME5 voucher is in your wallet.`, 'success');
-        
-        setTimeout(() => window.location.reload(), 1200);
-    }, 1200);
+        setTimeout(() => window.location.reload(), 500); // Mabilis na refresh after toast
+    }, 2000);
 };
 
 // ---- LOGOUT ----
@@ -2360,6 +2381,53 @@ document.addEventListener('click', function(e) {
         opts.classList.remove('show');
     }
 });
+
+// ==========================================
+// GLOBAL CLICK INTERCEPTOR (HARANG MAGIC)
+// ==========================================
+document.addEventListener('click', function(e) {
+    let targetHref = null;
+
+    // 1. Check kung "Order Now" button ang pinindot
+    const orderBtn = e.target.closest('#orderNowBtn');
+    if (orderBtn) targetHref = 'order.html';
+
+    // 2. Check kung normal na link (<a>) ang pinindot
+    const link = e.target.closest('a');
+    if (link) targetHref = link.getAttribute('href');
+
+    if (targetHref) {
+        const protectedPages = ['order.html', 'promos.html', 'history.html', 'profile.html', 'track.html'];
+        
+        // Kapag ang target ay protected page...
+        if (protectedPages.some(page => targetHref.includes(page))) {
+            
+            // KUNG WALANG NAKA-LOGIN:
+            if (!authGetCurrentUser()) {
+                e.preventDefault();
+                e.stopPropagation(); // Pipigilan lahat ng ibang actions
+                authShowModal('login');
+                showToast('Please log in or sign up to continue.', 'info');
+            } 
+            // KUNG NAKA-LOGIN: Ipakita yung loading screen
+            else {
+                const loader = document.getElementById('munchLoader');
+                if (loader && !targetHref.startsWith('#')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    const actionText = document.getElementById('loaderActionText');
+                    if(actionText) actionText.textContent = "Loading...";
+                    
+                    loader.style.display = 'flex';
+                    setTimeout(() => loader.style.opacity = '1', 10);
+                    setTimeout(() => window.location.href = targetHref, 800);
+                }
+            }
+        }
+    }
+}, true); // Ang "true" dito ang nagpapagana nung magic harang!
+
 
 // Expose globally
 window.authShowModal   = authShowModal;
