@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - munch.</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%23FF6B35'/%3E%3Cg stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'%3E%3Cpath d='M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2'/%3E%3Cpath d='M7 2v20'/%3E%3Cpath d='M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7'/%3E%3C/g%3E%3C/svg%3E">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .profile-label { font-size: 12px; font-weight: 700; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; display: block; }
+        .profile-value { font-size: 15px; font-weight: 600; color: var(--text-dark); background: var(--bg-gray); padding: 12px 16px; border-radius: 12px; border: 1px solid #EEE; word-break: break-word; }
+        .view-row { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    
+    <nav class="navbar">
+        <a href="index.html" class="logo">
+            <div class="logo-box">
+                <i data-lucide="utensils" class="text-white icon-22"></i>
+            </div>
+            munch.
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="order.html">Order</a>
+            <a href="promos.html">Promos</a>
+            <a href="about.html">About</a>
+        </div>
+        <div id="navbarUserZone" style="display: flex; align-items: center; gap: 15px;"></div>
+    </nav>
+
+    <main class="main-content" style="padding: 60px 20px; flex: 1;">
+        <div style="max-width: 720px; margin: 0 auto;">
+            
+            <div style="text-align: center; margin-bottom: 50px;">
+                <a href="history.html" style="display: inline-flex; align-items: center; gap: 6px; color: var(--primary-orange); text-decoration: none; font-weight: 600; margin-bottom: 20px; font-size: 14px;">
+                    <i data-lucide="arrow-left" style="width: 16px;"></i> Back to Orders
+                </a>
+                <h1 style="font-size: 42px; font-weight: 800; color: var(--text-dark); margin-bottom: 10px;">My <span style="color: var(--primary-orange);">Profile</span></h1>
+                <p style="color: var(--text-light); font-size: 16px;">Manage your account details and preferences</p>
+            </div>
+
+            <div style="background: white; border-radius: 24px; padding: 40px 30px; box-shadow: var(--shadow); margin-bottom: 40px;">
+                
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 30px; padding-bottom: 30px; border-bottom: 2px solid var(--light-orange);">
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <div id="profileAvatar" style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, var(--primary-orange), var(--dark-orange)); display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 800; flex-shrink: 0;"></div>
+                        <div>
+                            <h2 id="profileFullName" style="font-size: 24px; font-weight: 800; color: var(--text-dark); margin-bottom: 4px;"></h2>
+                            <p id="profileUsername" style="font-size: 14px; color: var(--text-light); margin-bottom: 8px;"></p>
+                            <p id="profileMemberSince" style="font-size: 12px; color: var(--text-light); text-transform: uppercase; font-weight: 600;"></p>
+                        </div>
+                    </div>
+                    <button id="btnEditTrigger" onclick="toggleEditMode(true)" style="background: var(--light-orange); color: var(--primary-orange); border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.3s;">
+                        <i data-lucide="edit-2" style="width: 16px;"></i> Edit Profile
+                    </button>
+                </div>
+
+                <div id="profileViewMode" style="display: block;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="view-row">
+                            <span class="profile-label">Full Name</span>
+                            <div class="profile-value" id="viewName"></div>
+                        </div>
+                        <div class="view-row">
+                            <span class="profile-label">Username</span>
+                            <div class="profile-value" id="viewUsernameBox"></div>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div class="view-row">
+                            <span class="profile-label">Email Address</span>
+                            <div class="profile-value" id="viewEmail"></div>
+                        </div>
+                        <div class="view-row">
+                            <span class="profile-label">Phone Number</span>
+                            <div class="profile-value" id="viewPhone"></div>
+                        </div>
+                    </div>
+                    <div class="view-row">
+                        <span class="profile-label">Delivery Address</span>
+                        <div class="profile-value" id="viewAddress"></div>
+                    </div>
+                    <div class="view-row" style="margin-bottom: 0;">
+                        <span class="profile-label">Preferred Currency</span>
+                        <div class="profile-value" id="viewCurrency"></div>
+                    </div>
+                </div>
+
+                <form id="profileEditMode" style="display: none; flex-direction: column; gap: 20px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div>
+                            <label class="profile-label">First Name</label>
+                            <input type="text" id="firstName" class="checkout-input" required>
+                        </div>
+                        <div>
+                            <label class="profile-label">Last Name</label>
+                            <input type="text" id="lastName" class="checkout-input" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="profile-label">Username</label>
+                        <input type="text" id="username" class="checkout-input" required>
+                    </div>
+
+                    <div>
+                        <label class="profile-label">Email Address</label>
+                        <input type="email" id="email" class="checkout-input" required>
+                    </div>
+
+                    <div>
+                        <label class="profile-label">Phone Number</label>
+                        <div class="phone-input-group" style="margin-bottom: 0;">
+                            <span id="profileCountryCode" class="country-code">+63</span>
+                            <input type="number" id="phone" class="phone-input" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="profile-label">Delivery Address</label>
+                        <textarea id="address" class="checkout-input" rows="3" style="resize: none; font-family: inherit; margin-bottom: 0;" required></textarea>
+                    </div>
+
+                   <div>
+                        <label class="profile-label">Preferred Currency</label>
+                        <input type="hidden" id="preferredCurrency" value="PHP">
+                        
+                        <div class="custom-currency-dropdown" style="width: 100%;">
+                            <div class="dropdown-selected" id="profCurrencySelected" onclick="toggleProfCurrency(event)" style="width: 100%; justify-content: space-between; padding: 12px 14px; border: 1px solid #ddd; border-radius: 12px; background: white; font-weight: normal; margin-bottom: 0;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <img id="profCurrencyFlag" src="https://flagcdn.com/w20/ph.png" alt="PHP">
+                                    <span id="profCurrencyText">PHP - Philippine Peso</span>
+                                </div>
+                                <i data-lucide="chevron-down" style="width: 16px; color: var(--text-light);"></i>
+                            </div>
+                            
+                            <div class="dropdown-options" id="profCurrencyOptions" style="width: 100%; border-radius: 12px; border: 1px solid #ddd; padding: 5px; top: calc(100% + 5px);">
+                                <div class="dropdown-item" onclick="selectProfCurrency('PHP', 'ph.png', 'PHP - Philippine Peso', '+63')"><img src="https://flagcdn.com/w20/ph.png"> PHP - Philippine Peso</div>
+                                <div class="dropdown-item" onclick="selectProfCurrency('USD', 'us.png', 'USD - US Dollar', '+1')"><img src="https://flagcdn.com/w20/us.png"> USD - US Dollar</div>
+                                <div class="dropdown-item" onclick="selectProfCurrency('EUR', 'eu.png', 'EUR - Euro', '+33')"><img src="https://flagcdn.com/w20/eu.png"> EUR - Euro</div>
+                                <div class="dropdown-item" onclick="selectProfCurrency('GBP', 'gb.png', 'GBP - British Pound', '+44')"><img src="https://flagcdn.com/w20/gb.png"> GBP - British Pound</div>
+                                <div class="dropdown-item" onclick="selectProfCurrency('JPY', 'jp.png', 'JPY - Japanese Yen', '+81')"><img src="https://flagcdn.com/w20/jp.png"> JPY - Japanese Yen</div>
+                                <div class="dropdown-item" onclick="selectProfCurrency('KRW', 'kr.png', 'KRW - South Korean Won', '+82')"><img src="https://flagcdn.com/w20/kr.png"> KRW - South Korean Won</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="border-top: 2px dashed #EEE; padding-top: 20px;">
+                        <label class="profile-label">Password (Optional)</label>
+                        <input type="password" id="password" class="checkout-input" placeholder="Leave blank to keep current password" style="margin-bottom: 0;">
+                    </div>
+
+                    <div style="display: flex; gap: 12px; margin-top: 20px;">
+                        <button type="submit" class="btn-checkout-confirm" style="flex: 1; margin: 0;">
+                            <i data-lucide="save" style="width: 18px;"></i> Save Changes
+                        </button>
+                        <button type="button" onclick="toggleEditMode(false)" class="modal-action-btn" style="flex: 1; margin: 0;">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <div class="footer-logo-icon">
+                    <i data-lucide="utensils" class="text-white icon-20"></i>
+                </div>
+                munch.
+            </div>
+            <p class="footer-desc">Fast, reliable, and always delicious.</p>
+            <div class="footer-links">
+                <a href="index.html">Home</a>
+                <a href="order.html">Order</a>
+                <a href="promos.html">Promos</a>
+                <a href="about.html">About Us</a>
+                <a href="developers.html">Developers</a>
+            </div>
+            <div class="footer-bottom">
+                &copy; 2026 munch. All rights reserved.
+            </div>
+        </div>
+    </footer>
+
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="script.js"></script>
+    <script>
+        const COUNTRY_CODE_MAP = {
+            'PHP': '+63', 'USD': '+1', 'EUR': '+33',
+            'GBP': '+44', 'JPY': '+81', 'KRW': '+82'
+        };
+
+        const CURRENCY_DISPLAY = {
+            'PHP': '🇵🇭 PHP - Philippine Peso',
+            'USD': '🇺🇸 USD - US Dollar',
+            'EUR': '🇪🇺 EUR - Euro',
+            'GBP': '🇬🇧 GBP - British Pound',
+            'JPY': '🇯🇵 JPY - Japanese Yen',
+            'KRW': '🇰🇷 KRW - South Korean Won'
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const user = authGetCurrentUser();
+            if (!user) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            loadProfileData(user);
+            
+            // TAMA NA ITO: profileEditMode na ang id ng form
+            document.getElementById('profileEditMode').addEventListener('submit', handleProfileSave);
+            
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        });
+
+       function loadProfileData(user) {
+            // Header Info
+            const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            document.getElementById('profileAvatar').textContent = initials;
+            document.getElementById('profileFullName').textContent = user.name;
+            document.getElementById('profileUsername').textContent = '@' + user.username;
+            const monthYear = new Date(user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' });
+            document.getElementById('profileMemberSince').textContent = `Member since ${monthYear}`;
+
+            // --- ITO ANG MGA BAGO PARA MAY FLAG SA STATIC VIEW ---
+            const currencyCode = user.currency || 'PHP';
+            const flagMap = {'PHP': 'ph.png', 'USD': 'us.png', 'EUR': 'eu.png', 'GBP': 'gb.png', 'JPY': 'jp.png', 'KRW': 'kr.png'};
+            const flagFile = flagMap[currencyCode] || 'ph.png';
+            const displayTxt = CURRENCY_DISPLAY[currencyCode] || currencyCode;
+
+            // Static View Info
+            document.getElementById('viewName').textContent = user.name;
+            document.getElementById('viewUsernameBox').textContent = '@' + user.username;
+            document.getElementById('viewEmail').textContent = user.email;
+            document.getElementById('viewPhone').textContent = (COUNTRY_CODE_MAP[currencyCode] || '+63') + ' ' + user.phone;
+            document.getElementById('viewAddress').textContent = user.address;
+            
+            // Ginamit natin ang innerHTML para makapag-render ng image tag
+            document.getElementById('viewCurrency').innerHTML = `
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <img src="https://flagcdn.com/w20/${flagFile}" style="width: 20px; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"> 
+                    <span>${displayTxt}</span>
+                </div>
+            `;
+
+            // Form Info
+            const names = user.name.split(' ');
+            document.getElementById('firstName').value = names[0] || '';
+            document.getElementById('lastName').value = names.slice(1).join(' ') || '';
+            document.getElementById('username').value = user.username || '';
+            document.getElementById('email').value = user.email || '';
+            document.getElementById('phone').value = user.phone || '';
+            document.getElementById('address').value = user.address || '';
+            document.getElementById('preferredCurrency').value = currencyCode;
+            updateCountryCode();
+        }
+
+        function toggleEditMode(isEditing) {
+            document.getElementById('profileViewMode').style.display = isEditing ? 'none' : 'block';
+            document.getElementById('profileEditMode').style.display = isEditing ? 'flex' : 'none';
+            document.getElementById('btnEditTrigger').style.display = isEditing ? 'none' : 'flex';
+        }
+
+        function updateCountryCode() {
+            const currency = document.getElementById('preferredCurrency').value;
+            document.getElementById('profileCountryCode').textContent = COUNTRY_CODE_MAP[currency] || '+63';
+        }
+
+        function handleProfileSave(e) {
+            e.preventDefault();
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const address = document.getElementById('address').value.trim();
+            const preferredCurrency = document.getElementById('preferredCurrency').value;
+            const password = document.getElementById('password').value;
+
+            if (!firstName || !lastName || !username || !email || !phone || !address) {
+                showToast('Please fill in all required fields', 'error'); return;
+            }
+
+            const currentUser = authGetCurrentUser();
+            const allUsers = JSON.parse(localStorage.getItem('munch_users')) || [];
+            const userIndex = allUsers.findIndex(u => u.username === currentUser.username);
+            
+            if (userIndex !== -1) {
+                const updatedUser = {
+                    ...allUsers[userIndex],
+                    name: `${firstName} ${lastName}`,
+                    username, email, phone, address, currency: preferredCurrency
+                };
+
+                if (password) updatedUser.password = password;
+                
+                allUsers[userIndex] = updatedUser;
+                localStorage.setItem('munch_users', JSON.stringify(allUsers));
+
+                const updatedCurrentUser = {
+                    name: updatedUser.name, username: updatedUser.username,
+                    email: updatedUser.email, phone: updatedUser.phone,
+                    address: updatedUser.address, currency: updatedUser.currency,
+                    createdAt: updatedUser.createdAt
+                };
+                localStorage.setItem('munch_current_user', JSON.stringify(updatedCurrentUser));
+                localStorage.setItem('foodhub_currency', preferredCurrency);
+
+                showToast('Profile updated successfully! ✨', 'success');
+                loadProfileData(updatedCurrentUser);
+                toggleEditMode(false); // Balik sa static view kapag tapos na mag save
+                authUpdateNavbar(); // Para mag update din yung username sa top nav if ever nabago
+            }
+        }
+
+        function toggleProfCurrency(e) {
+            if(e) e.stopPropagation();
+            document.getElementById('profCurrencyOptions').classList.toggle('show');
+        }
+
+        function selectProfCurrency(code, flag, text, phoneCode) {
+            document.getElementById('preferredCurrency').value = code;
+            document.getElementById('profCurrencyFlag').src = `https://flagcdn.com/w20/${flag}`;
+            document.getElementById('profCurrencyText').textContent = text;
+            document.getElementById('profileCountryCode').textContent = phoneCode;
+            document.getElementById('profCurrencyOptions').classList.remove('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            const opts = document.getElementById('profCurrencyOptions');
+            const drop = document.getElementById('profCurrencySelected');
+            if (opts && opts.classList.contains('show') && (!drop || !drop.contains(e.target))) {
+                opts.classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

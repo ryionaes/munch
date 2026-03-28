@@ -1,4 +1,48 @@
 // ==========================================
+// DYNAMIC USER STORAGE OVERRIDE (OPTION 2 MAGIC)
+// ==========================================
+// Kinukuha natin ang original na function ng browser
+const originalSetItem = localStorage.setItem.bind(localStorage);
+const originalGetItem = localStorage.getItem.bind(localStorage);
+
+// Ito yung mga data keys na gusto nating i-hiwalay per user
+const MUNCH_KEYS = [
+    'foodhub_orders', 
+    'foodhub_wallet', 
+    'foodhub_active_discount', 
+    'foodhub_active_discount_type', 
+    'foodhub_active_coupon_id', 
+    'munch_active_order', 
+    'munch_order_history', 
+    'munch_notifs'
+];
+
+// Helper function para mag-dugtong ng username
+function getDynamicKey(key) {
+    if (MUNCH_KEYS.includes(key)) {
+        const sessionStr = originalGetItem('munch_current_user');
+        if (sessionStr) {
+            try {
+                const user = JSON.parse(sessionStr);
+                if (user && user.username) {
+                    return `${key}_${user.username}`; // Result: foodhub_orders_juan123
+                }
+            } catch(e) {}
+        }
+    }
+    return key; // Default fallback kung walang naka-log in
+}
+
+// In-o-override natin ang default behavior ng browser
+localStorage.setItem = function(key, value) {
+    originalSetItem(getDynamicKey(key), value);
+};
+
+localStorage.getItem = function(key) {
+    return originalGetItem(getDynamicKey(key));
+};
+
+// ==========================================
 // DATA STORAGE & DOM ELEMENTS
 // ==========================================
 let orders = JSON.parse(localStorage.getItem('foodhub_orders')) || [];
@@ -111,7 +155,7 @@ function updateAllVisiblePrices() {
     
     try { if (typeof updateCheckoutRegion === 'function') updateCheckoutRegion(); } catch(e) {}
     // Sa loob ng updateAllVisiblePrices(), idagdag bago magsara ng function (bago line 113):
-try { if (typeof renderPromos === 'function') renderPromos(); } catch(e) {}x
+try { if (typeof renderPromos === 'function') renderPromos(); } catch(e) {}
 }
 // ==========================================
 // FORCE GLOBAL ACCESS (CRITICAL FIX)
@@ -686,10 +730,27 @@ function moveSlide(direction) {
 // CHECKOUT & FORM LOGIC
 // ==========================================
 function openCheckout() {
+    // Task 3: Check if user is logged in
+    const user = authGetCurrentUser();
+    if (!user) {
+        showToast("Please log in first", "error");
+        authShowModal('login');
+        return;
+    }
+
     if (orders.length === 0) {
         showToast("Your cart is empty!", "error");
         return;
     }
+
+    // Task 3: Pre-fill checkout form with user data
+    const custNameEl = document.getElementById('custName');
+    const custAddressEl = document.getElementById('custAddress');
+    const custPhoneEl = document.getElementById('custPhone');
+
+    if (custNameEl) custNameEl.value = user.name || '';
+    if (custAddressEl) custAddressEl.value = user.address || '';
+    if (custPhoneEl) custPhoneEl.value = user.phone || '';
 
     const modal = document.getElementById('checkoutModal');
     renderCouponDropdown(); 
@@ -1065,9 +1126,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        window.addEventListener('click', function(event) {
+     window.addEventListener('click', function(event) {
+            // Close standard modals
             if (event.target.classList.contains('modal-overlay')) {
                 closeModal();
+            }
+            // Close Auth (Login/Register) modal kapag pinindot sa labas
+            if (event.target.classList.contains('auth-modal-overlay')) {
+                authHideModal();
             }
         });
 
@@ -1730,17 +1796,17 @@ window.addNotification = addNotification;
 
 // --- INITIALIZATION ON PAGE LOAD ---
 document.addEventListener('DOMContentLoaded', () => {
-    renderCouponDropdown();
-    renderTable();
-    updateStats();
-    updateAllVisiblePrices(); 
-    if (typeof renderPromos === 'function') renderPromos();
+    try { renderCouponDropdown(); } catch(e) {}
+    try { renderTable(); } catch(e) {}
+    try { updateStats(); } catch(e) {}
+    try { updateAllVisiblePrices(); } catch(e) {}
+    try { if (typeof renderPromos === 'function') renderPromos(); } catch(e) {}
     
     // I-check agad kung may unread notifications pagkakasimula
-    updateNotifBadge();
+    try { updateNotifBadge(); } catch(e) {}
     
     // I-run yung monitor every 2 seconds para real-time sa lahat ng pages!
-    setInterval(monitorOrderNotifications, 2000);
+    try { setInterval(monitorOrderNotifications, 2000); } catch(e) {}
 });
 
 // ==========================================
@@ -1914,3 +1980,392 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }, 150);
 });
+// ==========================================
+// AUTH SYSTEM (LOGIN / REGISTER)
+// ==========================================
+
+const MUNCH_USERS_KEY    = 'munch_users';
+const MUNCH_SESSION_KEY  = 'munch_current_user';
+
+// ---- Helpers ----
+function authGetUsers() {
+    return JSON.parse(localStorage.getItem(MUNCH_USERS_KEY)) || [];
+}
+
+function authSaveUsers(users) {
+    localStorage.setItem(MUNCH_USERS_KEY, JSON.stringify(users));
+}
+
+function authGetCurrentUser() {
+    return JSON.parse(localStorage.getItem(MUNCH_SESSION_KEY)) || null;
+}
+
+function authSetSession(user) {
+    // Never store raw password in session
+    const safeUser = { name: user.name, username: user.username, email: user.email, address: user.address, phone: user.phone };
+    localStorage.setItem(MUNCH_SESSION_KEY, JSON.stringify(safeUser));
+}
+
+function authClearSession() {
+    localStorage.removeItem(MUNCH_SESSION_KEY);
+}
+
+// ---- Tab Switcher ----
+window.authSwitchTab = function(tab) {
+    const loginForm    = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const tabLogin     = document.getElementById('tabLoginBtn');
+    const tabRegister  = document.getElementById('tabRegisterBtn');
+    if (!loginForm) return;
+
+    // Clear errors
+    ['loginError','registerError','registerSuccess'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('show');
+    });
+
+    if (tab === 'login') {
+        loginForm.classList.add('active');
+        registerForm.classList.remove('active');
+        tabLogin.classList.add('active');
+        tabRegister.classList.remove('active');
+    } else {
+        loginForm.classList.remove('active');
+        registerForm.classList.add('active');
+        tabLogin.classList.remove('active');
+        tabRegister.classList.add('active');
+    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+// ---- Show/Hide password ----
+window.authTogglePw = function(inputId, btn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    const iconName = isHidden ? 'eye-off' : 'eye';
+    btn.innerHTML = `<i data-lucide="${iconName}" style="width:16px;height:16px;"></i>`;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+};
+
+// ---- Show auth modal ----
+function authShowModal(defaultTab = 'login') {
+    const modal = document.getElementById('authModal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    authSwitchTab(defaultTab);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// ---- Hide auth modal ----
+function authHideModal() {
+    const modal = document.getElementById('authModal');
+    if (modal) modal.style.display = 'none';
+}
+
+// ---- LOGIN ----
+window.authLogin = function() {
+    const username = (document.getElementById('loginUsername')?.value || '').trim().toLowerCase();
+    const password = (document.getElementById('loginPassword')?.value || '').trim();
+    const errEl   = document.getElementById('loginError');
+    const errText = document.getElementById('loginErrorText');
+
+    const showErr = (msg) => { errText.textContent = msg; errEl.classList.add('show'); };
+    errEl.classList.remove('show');
+
+    if (!username || !password) { showErr('Please fill in all fields.'); return; }
+
+    const users = authGetUsers();
+    const user  = users.find(u => u.username === username && u.password === password);
+
+    if (!user) { showErr('Incorrect username or password. Try again.'); return; }
+
+    authSetSession(user);
+    showToast(`Welcome back, ${user.name.split(' ')[0]}! 🎉`, 'success');
+    authHideModal();
+    
+    // Refresh ang page para mag-load ang specific cart at history ng user na ito
+    setTimeout(() => {
+        window.location.reload(); 
+    }, 800);
+};
+
+// ---- REGISTER ----
+window.authRegister = function() {
+    const firstName  = (document.getElementById('regFirstName')?.value || '').trim();
+    const lastName   = (document.getElementById('regLastName')?.value || '').trim();
+    const username   = (document.getElementById('regUsername')?.value || '').trim().toLowerCase();
+    const email      = (document.getElementById('regEmail')?.value || '').trim().toLowerCase();
+    const address    = (document.getElementById('regAddress')?.value || '').trim();
+    const phone      = (document.getElementById('regPhone')?.value || '').trim();
+    const password   = (document.getElementById('regPassword')?.value || '');
+    const confirmPw  = (document.getElementById('regConfirmPassword')?.value || '');
+    
+    // --- BAGO: Kunin ang currency ---
+    const currency   = (document.getElementById('regCurrency')?.value || 'PHP');
+
+    const errEl      = document.getElementById('registerError');
+    const errText    = document.getElementById('registerErrorText');
+    const successEl  = document.getElementById('registerSuccess');
+
+    const showErr = (msg) => {
+        errText.textContent = msg;
+        errEl.classList.add('show');
+        successEl.classList.remove('show');
+    };
+
+    errEl.classList.remove('show');
+    successEl.classList.remove('show');
+
+    if (!firstName || !lastName || !username || !email || !address || !phone || !password || !confirmPw) { showErr('Please fill in all fields.'); return; }
+    if (username.length < 3) { showErr('Username must be at least 3 characters.'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showErr('Please enter a valid email address.'); return; }
+    if (password.length < 6) { showErr('Password must be at least 6 characters.'); return; }
+    if (password !== confirmPw) { showErr('Passwords do not match.'); return; }
+
+    const users = authGetUsers();
+    if (users.find(u => u.username === username)) { showErr('That username is already taken. Choose another.'); return; }
+    if (users.find(u => u.email === email)) { showErr('An account with that email already exists.'); return; }
+
+    // --- BAGO: Idagdag ang currency sa storage nung nag register ---
+    localStorage.removeItem('foodhub_orders');
+    localStorage.removeItem('munch_order_history');
+    localStorage.removeItem('munch_active_order');
+    localStorage.removeItem('foodhub_wallet');
+    
+    orders = [];
+    claimedCoupons = {};
+    
+    // I-set agad ang currency sa browser memory para mag-reflect sa UI
+    localStorage.setItem('foodhub_currency', currency);
+
+    const newUser = {
+        name: `${firstName} ${lastName}`,
+        username,
+        email,
+        address,
+        phone,
+        password, 
+        currency, // <-- Isave sa user data
+        createdAt: new Date().toISOString()
+    };
+
+    users.push(newUser);
+    authSaveUsers(users);
+    authSetSession(newUser);
+
+    successEl.classList.add('show');
+
+    let startingWallet = {};
+    startingWallet['WELCOME5'] = { claimed: true, used: false };
+    localStorage.setItem('foodhub_wallet', JSON.stringify(startingWallet));
+
+    setTimeout(() => {
+        authHideModal();
+        showToast(`Welcome to munch., ${firstName}! 🍔 Your WELCOME5 voucher is in your wallet.`, 'success');
+        
+        setTimeout(() => window.location.reload(), 1200);
+    }, 1200);
+};
+
+// ---- LOGOUT ----
+window.authLogout = function() {
+    authClearSession();
+    showToast('You have been logged out. See you soon! 👋', 'info');
+    authUpdateNavbar();
+    // Show the modal again after a short pause
+    setTimeout(() => authShowModal('login'), 600);
+};
+
+// ---- Update Navbar based on auth state ----
+// ---- Update Navbar based on auth state ----
+function authUpdateNavbar() {
+    const user = authGetCurrentUser();
+
+    // ==========================================
+    // 1. DYNAMIC NAVBAR & FOOTER LINKS LOGIC
+    // ==========================================
+    const navContainer = document.querySelector('.nav-links');
+    if (navContainer) {
+        // Auto-inject Developers link kung wala pa (para di mo na i-edit lahat ng HTML files manually)
+        let devNavLink = navContainer.querySelector('a[href*="developers.html"]');
+        if (!devNavLink) {
+            navContainer.insertAdjacentHTML('beforeend', '<a href="developers.html">Developers</a>');
+        }
+
+        // Navbar Hiding/Showing Logic
+        navContainer.querySelectorAll('a').forEach(link => {
+            const href = link.getAttribute('href') || '';
+            if (href.includes('order.html') || href.includes('promos.html')) {
+                link.style.display = user ? 'inline-block' : 'none'; // Hide pag logged out
+            }
+            if (href.includes('developers.html')) {
+                link.style.display = user ? 'none' : 'inline-block'; // Hide pag logged in
+            }
+        });
+    }
+
+    // Footer Hiding/Showing Logic
+    document.querySelectorAll('.footer-links a').forEach(link => {
+        const href = link.getAttribute('href') || '';
+        if (href.includes('order.html') || href.includes('promos.html')) {
+            link.style.display = user ? 'inline-block' : 'none'; // Hide pag logged out
+        }
+    });
+
+
+    // ==========================================
+    // 2. EXISTING LOGIC PARA SA LOGIN/SIGNUP BUTTONS AT AVATAR
+    // ==========================================
+    const zone = document.getElementById('navbarUserZone');
+    if (!zone) return;
+
+    if (!user) {
+        // Show login / sign up buttons
+        zone.innerHTML = `
+            <div class="navbar-auth-btns">
+                <button class="navbar-login-btn" onclick="authShowModal('login')">Log In</button>
+                <button class="navbar-signup-btn" onclick="authShowModal('register')">Sign Up</button>
+            </div>`;
+    } else {
+        // Show notification bell + user chip with dropdown
+        const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0,2);
+        zone.innerHTML = `
+            <div style="position:relative;" id="notifBell">
+                <button onclick="toggleNotifPanel()" title="Notifications" class="dev-info-icon" style="background:#FFF4E5;color:#FF6B35;border:none;cursor:pointer;position:relative;">
+                    <i data-lucide="bell" class="icon-20"></i>
+                    <span id="notifBadge" style="position:absolute;top:6px;right:6px;width:9px;height:9px;background:#E74C3C;border-radius:50%;border:2px solid white;"></span>
+                </button>
+                <div id="notifPanel" style="display:none;position:absolute;top:calc(100% + 12px);right:0;width:320px;background:white;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,0.12);border:1px solid #F0F0F0;z-index:9999;overflow:hidden;">
+                    <div style="padding:16px 18px 12px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #F5F5F5;">
+                        <span style="font-size:15px;font-weight:800;color:var(--text-dark);">Notifications</span>
+                        <span style="font-size:12px;color:var(--primary-orange);font-weight:600;cursor:pointer;">Mark all read</span>
+                    </div>
+                    <div id="notifList" style="max-height:300px;overflow-y:auto;"></div>
+                    <div style="padding:12px 18px;text-align:center;border-top:1px solid #F5F5F5;">
+                        <span style="font-size:13px;color:var(--text-light);font-weight:500;">You're all caught up! 🎉</span>
+                    </div>
+                </div>
+            </div>
+            <div class="navbar-user-chip" id="userChip" onclick="authToggleUserDropdown()">
+                <div class="navbar-user-avatar">${initials}</div>
+                <span class="navbar-user-name">${user.name.split(' ')[0]}</span>
+                <i data-lucide="chevron-down" style="width:14px;height:14px;color:var(--primary-orange);"></i>
+                <div class="navbar-user-dropdown" id="userDropdown">
+                    <div class="navbar-user-dropdown-header">
+                        <strong>${user.name}</strong>
+                        <span>@${user.username}</span>
+                    </div>
+                    <a href="profile.html" class="navbar-user-dropdown-item">
+                        <i data-lucide="user" style="width:16px;height:16px;color:var(--primary-orange);"></i> My Profile
+                    </a>
+                    <a href="history.html" class="navbar-user-dropdown-item">
+                        <i data-lucide="clock-4" style="width:16px;height:16px;color:var(--primary-orange);"></i> Order History
+                    </a>
+                    <a href="promos.html" class="navbar-user-dropdown-item">
+                        <i data-lucide="ticket" style="width:16px;height:16px;color:var(--primary-orange);"></i> My Vouchers
+                    </a>
+                    <button class="navbar-user-dropdown-item logout" onclick="authLogout()">
+                        <i data-lucide="log-out" style="width:16px;height:16px;"></i> Log Out
+                    </button>
+                </div>
+            </div>`;
+    }
+
+    // Re-init icons & currency display
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    try { updateAllVisiblePrices(); } catch(e) {}
+    try { if (user) updateNotifBadge(); } catch(e) {}
+    try { if (user) renderNotifs(); } catch(e) {}
+}
+
+window.authToggleUserDropdown = function(e) {
+    const dd = document.getElementById('userDropdown');
+    if (dd) dd.classList.toggle('show');
+};
+
+// Close user dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const chip = document.getElementById('userChip');
+    const dd   = document.getElementById('userDropdown');
+    if (dd && dd.classList.contains('show')) {
+        if (!chip || !chip.contains(e.target)) {
+            dd.classList.remove('show');
+        }
+    }
+});
+
+// ---- Enter key support ----
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    const modal = document.getElementById('authModal');
+    if (!modal || modal.style.display === 'none') return;
+    const loginActive = document.getElementById('loginForm')?.classList.contains('active');
+    if (loginActive) authLogin();
+    else authRegister();
+});
+
+// ---- Boot: check auth on every page ----
+document.addEventListener('DOMContentLoaded', function() {
+    const user     = authGetCurrentUser();
+    const isIndex  = window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname.endsWith('/');
+    const onPublic = isIndex ||
+                     window.location.pathname.endsWith('about.html') ||
+                     window.location.pathname.endsWith('developers.html');
+
+    // Update navbar based on login state
+    authUpdateNavbar();
+
+    if (!user) {
+        if (isIndex) {
+            // Show login modal automatically on home page
+            setTimeout(() => authShowModal('login'), 400);
+        } else if (!onPublic) {
+            // Redirect protected pages to home
+            window.location.href = 'index.html';
+        }
+    }
+});
+
+// ==========================================
+// REGISTER FORM CUSTOM DROPDOWN
+// ==========================================
+window.toggleRegCurrency = function(e) {
+    if(e) e.stopPropagation();
+    document.getElementById('regCurrencyOptions').classList.toggle('show');
+};
+
+window.selectRegCurrency = function(code, flag, text, phoneCode) {
+    // 1. Update Hidden Input
+    document.getElementById('regCurrency').value = code;
+    
+    // 2. Update UI (Flags & Text)
+    document.getElementById('regCurrencyFlag').src = `https://flagcdn.com/w20/${flag}`;
+    document.getElementById('regCurrencyText').textContent = text;
+    
+    // 3. Update Country Code
+    const phoneCodeEl = document.getElementById('regCountryCode');
+    if(phoneCodeEl) phoneCodeEl.textContent = phoneCode;
+    
+    // 4. Close Dropdown
+    document.getElementById('regCurrencyOptions').classList.remove('show');
+};
+
+// Isara ang dropdown kapag pumindot sa labas
+document.addEventListener('click', function(e) {
+    const opts = document.getElementById('regCurrencyOptions');
+    const drop = document.getElementById('regCurrencySelected');
+    if (opts && opts.classList.contains('show') && (!drop || !drop.contains(e.target))) {
+        opts.classList.remove('show');
+    }
+});
+
+// Expose globally
+window.authShowModal   = authShowModal;
+window.authHideModal   = authHideModal;
+window.authLogout      = authLogout;
+window.authLogin       = authLogin;
+window.authRegister    = authRegister;
+window.authSwitchTab   = authSwitchTab;
+window.authTogglePw    = authTogglePw;
